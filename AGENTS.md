@@ -1,12 +1,15 @@
-<!-- LOVABLE:BEGIN -->
+# AI Agents Guide
+
+Welcome! Please follow these guidelines when interacting with this codebase:
 
 > [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
+> **Environment & Secrets**
+> Do NOT access, read, or modify any `.env` files or environment variables without explicit consent from the user.
 
-<!-- LOVABLE:END -->
+> [!NOTE]
+> **Codebase Structure**
+> Always adhere to the current monorepo structure:
+> - `packages/shared`: Shared types and constants.
+> - `apps/backend`: Node.js/Express backend (MVC pattern).
+> - `apps/frontend`: Vite/React frontend SPA.
+> Maintain clear boundaries and ensure shared dependencies are only placed in `packages/shared`.
