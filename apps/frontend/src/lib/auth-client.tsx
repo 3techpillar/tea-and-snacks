@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { authApi, type ChangePasswordInput } from "@/lib/api/auth";
+import { authApi, type ChangePasswordInput, type UpdateProfileInput } from "@/lib/api/auth";
 import type { PublicUser, UserRole } from "@tea-and-snacks/shared";
 import { hasPermission, type Permission } from "@tea-and-snacks/shared";
 
@@ -23,6 +23,7 @@ type AuthContextValue = {
   }) => Promise<CurrentUser>;
   logout: () => Promise<void>;
   changePassword: (input: ChangePasswordInput) => Promise<CurrentUser>;
+  updateProfile: (input: UpdateProfileInput) => Promise<CurrentUser>;
   refreshSession: () => Promise<CurrentUser>;
   checkPermission: (...permissions: Permission[]) => boolean;
   loginError: string | null;
@@ -79,6 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user) => queryClient.setQueryData(AUTH_QUERY_KEY, user),
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: (input: UpdateProfileInput) => authApi.updateProfile(input),
+    onSuccess: (user) => queryClient.setQueryData(AUTH_QUERY_KEY, user),
+  });
+
   const refreshMutation = useMutation({
     mutationFn: () => authApi.refresh(),
     onSuccess: (user) => queryClient.setQueryData(AUTH_QUERY_KEY, user),
@@ -94,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register: (input) => registerMutation.mutateAsync(input),
     logout: () => logoutMutation.mutateAsync().then(() => undefined),
     changePassword: (input) => changePasswordMutation.mutateAsync(input),
+    updateProfile: (input) => updateProfileMutation.mutateAsync(input),
     refreshSession: () => refreshMutation.mutateAsync(),
     checkPermission: (...permissions) => {
       if (!user) return false;

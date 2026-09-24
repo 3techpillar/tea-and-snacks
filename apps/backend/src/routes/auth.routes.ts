@@ -45,4 +45,16 @@ router.post(
   authController.changePasswordHandler,
 );
 
+const updateProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").optional(),
+  phone: z.string().optional(),
+});
+
+router.patch(
+  "/profile",
+  authMiddleware,
+  validate(updateProfileSchema),
+  authController.updateProfileHandler,
+);
+
 export default router;

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth-client";
+import { UserMenu } from "@/components/UserMenu";
 
 export function Header() {
   const { count } = useCart();
@@ -53,37 +54,34 @@ export function Header() {
           >
             Vendor
           </Link>
+        </nav>
+
+        <div className="flex items-center gap-2">
           {user ? (
-            <button
-              onClick={() => logout()}
-              className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              Sign out ({user.name.split(" ")[0]})
-            </button>
+            <UserMenu />
           ) : (
             <Link
               to="/login"
               search={{ redirect: "/" }}
-              className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              activeProps={{ className: "bg-secondary text-foreground" }}
+              className="rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80"
             >
               Sign in
             </Link>
           )}
-        </nav>
 
-        <Link
-          to="/cart"
-          aria-label={`Cart, ${count} items`}
-          className="relative inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-pop)] transition-transform active:scale-95 sm:px-4 hover:sm:scale-105"
-        >
-          🛒<span className="hidden sm:inline">Cart</span>
-          {count > 0 && (
-            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary-foreground/25 px-1 text-xs">
-              {count}
-            </span>
-          )}
-        </Link>
+          <Link
+            to="/cart"
+            aria-label={`Cart, ${count} items`}
+            className="relative hidden sm:inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-pop)] transition-transform active:scale-95 sm:px-4 hover:sm:scale-105"
+          >
+            🛒<span className="hidden sm:inline">Cart</span>
+            {count > 0 && (
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary-foreground/25 px-1 text-xs">
+                {count}
+              </span>
+            )}
+          </Link>
+        </div>
       </div>
       <div className="h-1 gradient-rainbow" />
     </header>

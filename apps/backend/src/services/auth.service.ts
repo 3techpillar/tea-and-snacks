@@ -181,6 +181,30 @@ export async function changePassword(
   return { user: toPublicUser(user), tokens };
 }
 
+export async function updateProfile(
+  userId: string,
+  data: { name?: string; phone?: string },
+): Promise<{ user: PublicUser }> {
+  await connectDB();
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new UnauthorizedError("User not found.");
+  }
+
+  if (data.name !== undefined) {
+    const trimmed = data.name.trim();
+    if (trimmed.length < 2) throw new ValidationError("Name is too short.");
+    user.name = trimmed;
+  }
+  
+  if (data.phone !== undefined) {
+    user.phone = data.phone.trim();
+  }
+
+  await user.save();
+  return { user: toPublicUser(user) };
+}
+
 export async function logoutUser(userId: string): Promise<void> {
   await connectDB();
   await User.findByIdAndUpdate(userId, {

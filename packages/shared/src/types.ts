@@ -50,6 +50,7 @@ export type PublicUser = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   vendorId?: string;
   isActive: boolean;

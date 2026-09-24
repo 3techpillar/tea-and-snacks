@@ -4,6 +4,7 @@ import {
   loginUser,
   refreshTokens,
   changePassword,
+  updateProfile,
   logoutUser,
 } from "../services/auth.service";
 import { env } from "../config/env";
@@ -110,6 +111,22 @@ export async function changePasswordHandler(
     const { user, tokens } = await changePassword(req.user.id, req.body);
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
     sendSuccess(res, { user, message: "Password changed successfully." });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateProfileHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    if (!req.user?.id) {
+      throw new UnauthorizedError();
+    }
+    const { user } = await updateProfile(req.user.id, req.body);
+    sendSuccess(res, { user, message: "Profile updated successfully." });
   } catch (err) {
     next(err);
   }

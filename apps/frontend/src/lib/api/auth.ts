@@ -20,6 +20,11 @@ export type ChangePasswordInput = {
   newPassword: string;
 };
 
+export type UpdateProfileInput = {
+  name?: string;
+  phone?: string;
+};
+
 type AuthData = { user: PublicUser };
 
 export const authApi = {
@@ -42,5 +47,10 @@ export const authApi = {
   changePassword: (data: ChangePasswordInput) =>
     apiClient
       .post<AuthData & { message: string }>("/api/auth/change-password", data)
+      .then((d) => d.user),
+
+  updateProfile: (data: UpdateProfileInput) =>
+    apiClient
+      .patch<AuthData & { message: string }>("/api/auth/profile", data)
       .then((d) => d.user),
 };

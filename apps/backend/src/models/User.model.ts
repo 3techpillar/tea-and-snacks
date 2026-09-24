@@ -51,6 +51,7 @@ export function toPublicUser(user: UserDoc) {
     id: String(user._id),
     name: user.name,
     email: user.email,
+    phone: user.phone ?? undefined,
     role: user.role,
     vendorId: user.vendorId ?? undefined,
     isActive: user.isActive,
