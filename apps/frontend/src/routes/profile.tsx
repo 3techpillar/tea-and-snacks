@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-client";
 import { ProfileInfo } from "@/components/ProfileInfo";
 import { RecentOrders } from "@/components/RecentOrders";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
-import { Shield } from "lucide-react";
+import { Shield, LayoutDashboard, Store } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -27,10 +27,37 @@ function ProfilePage() {
     <div className="bg-muted/10 min-h-[calc(100vh-64px)] pb-16">
       <div className="border-b border-border bg-background px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <h1 className="text-2xl font-medium tracking-tight text-foreground">Account Settings</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your account settings, security, and preferences.
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-medium tracking-tight text-foreground">
+                Account Settings
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Manage your account settings, security, and preferences.
+              </p>
+            </div>
+
+            {/* Dashboard quick-access button for admin / vendor */}
+            {user.role === "admin" && (
+              <Link
+                to="/admin/orders"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Admin Dashboard
+              </Link>
+            )}
+            {user.role === "vendor" && user.vendorId && (
+              <Link
+                to="/vendor/$vendorId"
+                params={{ vendorId: user.vendorId }}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+              >
+                <Store className="h-4 w-4" />
+                Vendor Dashboard
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 

@@ -40,20 +40,40 @@ export function Header() {
           >
             Vendors
           </Link>
-          <Link
-            to="/orders"
-            className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            activeProps={{ className: "bg-secondary text-foreground" }}
-          >
-            My orders
-          </Link>
-          <Link
-            to="/vendor"
-            className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            activeProps={{ className: "bg-secondary text-foreground" }}
-          >
-            Vendor
-          </Link>
+
+          {/* Only show "My Orders" for regular users (not admin/vendor on duty) */}
+          {(!user || user.role === "customer") && (
+            <Link
+              to="/orders"
+              className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              activeProps={{ className: "bg-secondary text-foreground" }}
+            >
+              My orders
+            </Link>
+          )}
+
+          {/* Show vendor dashboard link only for vendors */}
+          {user?.role === "vendor" && user.vendorId && (
+            <Link
+              to="/vendor/$vendorId"
+              params={{ vendorId: user.vendorId }}
+              className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              activeProps={{ className: "bg-secondary text-foreground" }}
+            >
+              My Stall
+            </Link>
+          )}
+
+          {/* Show admin dashboard link only for admins */}
+          {user?.role === "admin" && (
+            <Link
+              to="/admin/orders"
+              className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              activeProps={{ className: "bg-secondary text-foreground" }}
+            >
+              Admin Panel
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">

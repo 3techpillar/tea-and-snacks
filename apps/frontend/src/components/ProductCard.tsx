@@ -1,14 +1,19 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/auth-client";
 import type { Product } from "@/lib/data";
 import { productImage } from "@/lib/images";
 
 export function ProductCard({ product }: { product: Product }) {
+  const { user } = useAuth();
   const { add, lines, setQty } = useCart();
   const navigate = useNavigate();
   const qty = lines.find((l) => l.productId === product.id)?.qty ?? 0;
 
+  const isOwnItem = user?.role === "vendor" && user.vendorId === product.vendorId;
+
   const quickOrder = () => {
+    if (isOwnItem) return;
     if (qty === 0) add(product.id);
     navigate({ to: "/checkout" });
   };
@@ -30,9 +35,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="flex items-center gap-2">
           <span
             className={`grid h-4 w-4 place-items-center rounded-sm border text-[8px] ${
-              product.veg
-                ? "border-mint text-mint-ink"
-                : "border-chili text-chili-ink"
+              product.veg ? "border-mint text-mint-ink" : "border-chili text-chili-ink"
             }`}
           >
             ●
@@ -44,18 +47,22 @@ export function ProductCard({ product }: { product: Product }) {
             {product.tag}
           </span>
         )}
-        <p className="mt-1 text-sm font-semibold text-muted-foreground">
-          ₹{product.price}
-        </p>
-        <button
-          onClick={quickOrder}
-          className="mt-2 inline-flex items-center gap-1 rounded-full bg-mango-soft px-3 py-1 text-xs font-bold text-mango-ink transition-transform active:scale-95"
-        >
-          ⚡ Quick order
-        </button>
+        <p className="mt-1 text-sm font-semibold text-muted-foreground">₹{product.price}</p>
+        {!isOwnItem && (
+          <button
+            onClick={quickOrder}
+            className="mt-2 inline-flex items-center gap-1 rounded-full bg-mango-soft px-3 py-1 text-xs font-bold text-mango-ink transition-transform active:scale-95"
+          >
+            ⚡ Quick order
+          </button>
+        )}
       </div>
 
-      {qty === 0 ? (
+      {isOwnItem ? (
+        <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-muted-foreground">
+          Your item
+        </span>
+      ) : qty === 0 ? (
         <button
           onClick={() => add(product.id)}
           className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-pop)] transition-transform hover:scale-105 active:scale-95"
