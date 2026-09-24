@@ -11,6 +11,10 @@ export type UserDoc = HydratedDocument<{
   passwordHash: string;
   role: UserRole;
   vendorId?: string;
+  tokenVersion: number;
+  isActive: boolean;
+  lastLoginAt?: Date;
+  refreshTokenHash?: string;
 }>;
 
 const userSchema = new Schema(
@@ -31,8 +35,11 @@ const userSchema = new Schema(
       default: "customer",
       required: true,
     },
-    // Set only when role === "vendor": which stall this account manages.
     vendorId: { type: String, ref: "Vendor" },
+    tokenVersion: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
+    lastLoginAt: { type: Date },
+    refreshTokenHash: { type: String },
   },
   { timestamps: true },
 );
@@ -46,6 +53,7 @@ export function toPublicUser(user: UserDoc) {
     email: user.email,
     role: user.role,
     vendorId: user.vendorId ?? undefined,
+    isActive: user.isActive,
   };
 }
 

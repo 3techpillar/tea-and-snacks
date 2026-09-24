@@ -52,6 +52,18 @@ export type PublicUser = {
   email: string;
   role: UserRole;
   vendorId?: string;
+  isActive: boolean;
+};
+
+/** Returned by login / register / refresh endpoints. */
+export type AuthResponse = {
+  user: PublicUser;
+};
+
+/** Shape of a token pair (only used internally, tokens travel via cookies). */
+export type TokenPair = {
+  accessToken: string;
+  refreshToken: string;
 };
 
 // ── Order types ────────────────────────────────────────────────────
