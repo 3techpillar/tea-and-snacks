@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth-client";
+import { UserMenu } from "@/components/UserMenu";
 
 export function Header() {
   const { count } = useCart();
@@ -39,51 +40,68 @@ export function Header() {
           >
             Vendors
           </Link>
-          <Link
-            to="/orders"
-            className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            activeProps={{ className: "bg-secondary text-foreground" }}
-          >
-            My orders
-          </Link>
-          <Link
-            to="/vendor"
-            className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            activeProps={{ className: "bg-secondary text-foreground" }}
-          >
-            Vendor
-          </Link>
-          {user ? (
-            <button
-              onClick={() => logout()}
-              className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              Sign out ({user.name.split(" ")[0]})
-            </button>
-          ) : (
+
+          {/* Only show "My Orders" for regular users (not admin/vendor on duty) */}
+          {(!user || user.role === "customer") && (
             <Link
-              to="/login"
-              search={{ redirect: "/" }}
+              to="/orders"
               className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               activeProps={{ className: "bg-secondary text-foreground" }}
             >
-              Sign in
+              My orders
+            </Link>
+          )}
+
+          {/* Show vendor dashboard link only for vendors */}
+          {user?.role === "vendor" && user.vendorId && (
+            <Link
+              to="/vendor/$vendorId"
+              params={{ vendorId: user.vendorId }}
+              className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              activeProps={{ className: "bg-secondary text-foreground" }}
+            >
+              My Stall
+            </Link>
+          )}
+
+          {/* Show admin dashboard link only for admins */}
+          {user?.role === "admin" && (
+            <Link
+              to="/admin/orders"
+              className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              activeProps={{ className: "bg-secondary text-foreground" }}
+            >
+              Admin Panel
             </Link>
           )}
         </nav>
 
-        <Link
-          to="/cart"
-          aria-label={`Cart, ${count} items`}
-          className="relative inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-pop)] transition-transform active:scale-95 sm:px-4 hover:sm:scale-105"
-        >
-          🛒<span className="hidden sm:inline">Cart</span>
-          {count > 0 && (
-            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary-foreground/25 px-1 text-xs">
-              {count}
-            </span>
+        <div className="flex items-center gap-2">
+          {user ? (
+            <UserMenu />
+          ) : (
+            <Link
+              to="/login"
+              search={{ redirect: "/" }}
+              className="rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80"
+            >
+              Sign in
+            </Link>
           )}
-        </Link>
+
+          <Link
+            to="/cart"
+            aria-label={`Cart, ${count} items`}
+            className="relative hidden sm:inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-pop)] transition-transform active:scale-95 sm:px-4 hover:sm:scale-105"
+          >
+            🛒<span className="hidden sm:inline">Cart</span>
+            {count > 0 && (
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary-foreground/25 px-1 text-xs">
+                {count}
+              </span>
+            )}
+          </Link>
+        </div>
       </div>
       <div className="h-1 gradient-rainbow" />
     </header>

@@ -10,21 +10,34 @@
 
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as AdminRouteImport } from "./routes/admin"
 import { Route as CartRouteImport } from "./routes/cart"
 import { Route as CheckoutRouteImport } from "./routes/checkout"
+import { Route as ForgotPasswordRouteImport } from "./routes/forgot-password"
 import { Route as LoginRouteImport } from "./routes/login"
+import { Route as ProfileRouteImport } from "./routes/profile"
 import { Route as RegisterRouteImport } from "./routes/register"
 import { Route as SearchRouteImport } from "./routes/search"
+import { Route as AdminIndexRouteImport } from "./routes/admin.index"
+import { Route as AdminOrdersRouteImport } from "./routes/admin.orders"
 import { Route as OrdersIndexRouteImport } from "./routes/orders.index"
 import { Route as OrdersOrderIdRouteImport } from "./routes/orders.$orderId"
 import { Route as VendorIndexRouteImport } from "./routes/vendor.index"
 import { Route as VendorVendorIdRouteImport } from "./routes/vendor.$vendorId"
 import { Route as VendorsIndexRouteImport } from "./routes/vendors.index"
 import { Route as VendorsVendorIdRouteImport } from "./routes/vendors.$vendorId"
+import { Route as AdminVendorsIndexRouteImport } from "./routes/admin.vendors.index"
+import { Route as AdminVendorsVendorIdRouteImport } from "./routes/admin.vendors.$vendorId"
+import { Route as AdminVendorsCreateRouteImport } from "./routes/admin.vendors.create"
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: "/admin",
+  path: "/admin",
   getParentRoute: () => rootRouteImport,
 } as any)
 const CartRoute = CartRouteImport.update({
@@ -37,9 +50,19 @@ const CheckoutRoute = CheckoutRouteImport.update({
   path: "/checkout",
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: "/forgot-password",
+  path: "/forgot-password",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: "/profile",
+  path: "/profile",
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -51,6 +74,16 @@ const SearchRoute = SearchRouteImport.update({
   id: "/search",
   path: "/search",
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: "/orders",
+  path: "/orders",
+  getParentRoute: () => AdminRoute,
 } as any)
 const OrdersIndexRoute = OrdersIndexRouteImport.update({
   id: "/orders/",
@@ -82,100 +115,164 @@ const VendorsVendorIdRoute = VendorsVendorIdRouteImport.update({
   path: "/vendors/$vendorId",
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminVendorsIndexRoute = AdminVendorsIndexRouteImport.update({
+  id: "/vendors/",
+  path: "/vendors/",
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVendorsVendorIdRoute = AdminVendorsVendorIdRouteImport.update({
+  id: "/vendors/$vendorId",
+  path: "/vendors/$vendorId",
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVendorsCreateRoute = AdminVendorsCreateRouteImport.update({
+  id: "/vendors/create",
+  path: "/vendors/create",
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
+  "/admin": typeof AdminRouteWithChildren
   "/cart": typeof CartRoute
   "/checkout": typeof CheckoutRoute
+  "/forgot-password": typeof ForgotPasswordRoute
   "/login": typeof LoginRoute
+  "/profile": typeof ProfileRoute
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
+  "/admin/orders": typeof AdminOrdersRoute
   "/orders/$orderId": typeof OrdersOrderIdRoute
   "/vendor/$vendorId": typeof VendorVendorIdRoute
   "/vendors/$vendorId": typeof VendorsVendorIdRoute
+  "/admin/": typeof AdminIndexRoute
   "/orders/": typeof OrdersIndexRoute
   "/vendor/": typeof VendorIndexRoute
   "/vendors/": typeof VendorsIndexRoute
+  "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
+  "/admin/vendors/create": typeof AdminVendorsCreateRoute
+  "/admin/vendors/": typeof AdminVendorsIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/cart": typeof CartRoute
   "/checkout": typeof CheckoutRoute
+  "/forgot-password": typeof ForgotPasswordRoute
   "/login": typeof LoginRoute
+  "/profile": typeof ProfileRoute
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
+  "/admin/orders": typeof AdminOrdersRoute
   "/orders/$orderId": typeof OrdersOrderIdRoute
   "/vendor/$vendorId": typeof VendorVendorIdRoute
   "/vendors/$vendorId": typeof VendorsVendorIdRoute
+  "/admin": typeof AdminIndexRoute
   "/orders": typeof OrdersIndexRoute
   "/vendor": typeof VendorIndexRoute
   "/vendors": typeof VendorsIndexRoute
+  "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
+  "/admin/vendors/create": typeof AdminVendorsCreateRoute
+  "/admin/vendors": typeof AdminVendorsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
+  "/admin": typeof AdminRouteWithChildren
   "/cart": typeof CartRoute
   "/checkout": typeof CheckoutRoute
+  "/forgot-password": typeof ForgotPasswordRoute
   "/login": typeof LoginRoute
+  "/profile": typeof ProfileRoute
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
+  "/admin/orders": typeof AdminOrdersRoute
   "/orders/$orderId": typeof OrdersOrderIdRoute
   "/vendor/$vendorId": typeof VendorVendorIdRoute
   "/vendors/$vendorId": typeof VendorsVendorIdRoute
+  "/admin/": typeof AdminIndexRoute
   "/orders/": typeof OrdersIndexRoute
   "/vendor/": typeof VendorIndexRoute
   "/vendors/": typeof VendorsIndexRoute
+  "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
+  "/admin/vendors/create": typeof AdminVendorsCreateRoute
+  "/admin/vendors/": typeof AdminVendorsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | "/"
+    | "/admin"
     | "/cart"
     | "/checkout"
+    | "/forgot-password"
     | "/login"
+    | "/profile"
     | "/register"
     | "/search"
+    | "/admin/orders"
     | "/orders/$orderId"
     | "/vendor/$vendorId"
     | "/vendors/$vendorId"
+    | "/admin/"
     | "/orders/"
     | "/vendor/"
     | "/vendors/"
+    | "/admin/vendors/$vendorId"
+    | "/admin/vendors/create"
+    | "/admin/vendors/"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
     | "/cart"
     | "/checkout"
+    | "/forgot-password"
     | "/login"
+    | "/profile"
     | "/register"
     | "/search"
+    | "/admin/orders"
     | "/orders/$orderId"
     | "/vendor/$vendorId"
     | "/vendors/$vendorId"
+    | "/admin"
     | "/orders"
     | "/vendor"
     | "/vendors"
+    | "/admin/vendors/$vendorId"
+    | "/admin/vendors/create"
+    | "/admin/vendors"
   id:
     | "__root__"
     | "/"
+    | "/admin"
     | "/cart"
     | "/checkout"
+    | "/forgot-password"
     | "/login"
+    | "/profile"
     | "/register"
     | "/search"
+    | "/admin/orders"
     | "/orders/$orderId"
     | "/vendor/$vendorId"
     | "/vendors/$vendorId"
+    | "/admin/"
     | "/orders/"
     | "/vendor/"
     | "/vendors/"
+    | "/admin/vendors/$vendorId"
+    | "/admin/vendors/create"
+    | "/admin/vendors/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   SearchRoute: typeof SearchRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
@@ -195,6 +292,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/admin": {
+      id: "/admin"
+      path: "/admin"
+      fullPath: "/admin"
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/cart": {
       id: "/cart"
       path: "/cart"
@@ -209,11 +313,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/forgot-password": {
+      id: "/forgot-password"
+      path: "/forgot-password"
+      fullPath: "/forgot-password"
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/login": {
       id: "/login"
       path: "/login"
       fullPath: "/login"
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/profile": {
+      id: "/profile"
+      path: "/profile"
+      fullPath: "/profile"
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/register": {
@@ -229,6 +347,20 @@ declare module "@tanstack/react-router" {
       fullPath: "/search"
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    "/admin/": {
+      id: "/admin/"
+      path: "/"
+      fullPath: "/admin/"
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    "/admin/orders": {
+      id: "/admin/orders"
+      path: "/orders"
+      fullPath: "/admin/orders"
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
     }
     "/orders/": {
       id: "/orders/"
@@ -272,14 +404,56 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof VendorsVendorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/admin/vendors/": {
+      id: "/admin/vendors/"
+      path: "/vendors"
+      fullPath: "/admin/vendors/"
+      preLoaderRoute: typeof AdminVendorsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    "/admin/vendors/$vendorId": {
+      id: "/admin/vendors/$vendorId"
+      path: "/vendors/$vendorId"
+      fullPath: "/admin/vendors/$vendorId"
+      preLoaderRoute: typeof AdminVendorsVendorIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    "/admin/vendors/create": {
+      id: "/admin/vendors/create"
+      path: "/vendors/create"
+      fullPath: "/admin/vendors/create"
+      preLoaderRoute: typeof AdminVendorsCreateRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminVendorsVendorIdRoute: typeof AdminVendorsVendorIdRoute
+  AdminVendorsCreateRoute: typeof AdminVendorsCreateRoute
+  AdminVendorsIndexRoute: typeof AdminVendorsIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminOrdersRoute: AdminOrdersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminVendorsVendorIdRoute: AdminVendorsVendorIdRoute,
+  AdminVendorsCreateRoute: AdminVendorsCreateRoute,
+  AdminVendorsIndexRoute: AdminVendorsIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   SearchRoute: SearchRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,

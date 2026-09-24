@@ -10,7 +10,9 @@ const productSchema = new Schema(
     emoji: { type: String, required: true },
     veg: { type: Boolean, required: true },
     tag: { type: String },
+    imageUrl: { type: String },
     isActive: { type: Boolean, default: true },
+    isAvailable: { type: Boolean, default: true },
   },
   { timestamps: true, _id: false },
 );

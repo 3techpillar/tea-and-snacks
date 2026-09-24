@@ -55,6 +55,8 @@ async function main() {
       role: "vendor",
       vendorId: acc.vendorId,
       passwordHash: await hashPassword(acc.password),
+      isVerified: true,
+      isActive: true,
     });
   }
   console.log(

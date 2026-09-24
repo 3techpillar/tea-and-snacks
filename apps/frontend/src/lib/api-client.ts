@@ -1,26 +1,47 @@
-/**
- * Base API client for communicating with the backend REST API.
- * In development, Vite proxies /api to the backend server (see vite.config.ts),
- * so we use relative URLs. In production with same-domain deployment, this
- * also works as-is. For different-domain deployments, set VITE_API_URL.
- */
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 type ApiOptions = {
   method?: string;
   body?: unknown;
   headers?: Record<string, string>;
+  _skipRefresh?: boolean;
 };
 
+let isRefreshing = false;
+let refreshQueue: Array<{
+  resolve: () => void;
+  reject: (err: Error) => void;
+}> = [];
+
+function onRefreshSuccess() {
+  refreshQueue.forEach(({ resolve }) => resolve());
+  refreshQueue = [];
+}
+
+function onRefreshFailure(err: Error) {
+  refreshQueue.forEach(({ reject }) => reject(err));
+  refreshQueue = [];
+}
+
+async function doRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const { method = "GET", body, headers = {} } = options;
+  const { method = "GET", body, headers = {}, _skipRefresh = false } = options;
 
   const fetchOptions: RequestInit = {
     method,
-    credentials: "include", // send httpOnly cookies
-    headers: {
-      ...headers,
-    },
+    credentials: "include",
+    headers: { ...headers },
   };
 
   if (body !== undefined) {
@@ -33,21 +54,72 @@ async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
 
   const res = await fetch(`${API_BASE}${path}`, fetchOptions);
 
-  if (!res.ok) {
-    let message = "Something went wrong.";
-    try {
-      const data = await res.json();
-      message = data.message ?? message;
-    } catch {
-      // response wasn't JSON
+  if (res.status === 401 && !_skipRefresh) {
+    let refreshed = false;
+
+    if (!isRefreshing) {
+      isRefreshing = true;
+      try {
+        refreshed = await doRefresh();
+        if (refreshed) {
+          onRefreshSuccess();
+        } else {
+          onRefreshFailure(new Error("Session expired"));
+        }
+      } catch (err) {
+        onRefreshFailure(err as Error);
+      } finally {
+        isRefreshing = false;
+      }
+    } else {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          refreshQueue.push({ resolve, reject });
+        });
+        refreshed = true;
+      } catch {
+        refreshed = false;
+      }
     }
-    throw new Error(message);
+
+    if (refreshed) {
+      return request<T>(path, { ...options, _skipRefresh: true });
+    }
+
+    const err = new Error("Session expired. Please sign in again.");
+    (err as any).code = "SESSION_EXPIRED";
+    (err as any).status = 401;
+    throw err;
   }
 
-  // Handle empty responses (204 No Content)
+  if (!res.ok) {
+    let message = "Something went wrong.";
+    let code = "UNKNOWN_ERROR";
+    try {
+      const data = await res.json();
+      if (data.error?.message) {
+        message = data.error.message;
+        code = data.error.code ?? code;
+      } else if (data.message) {
+        message = data.message;
+      }
+    } catch {
+    }
+    const err = new Error(message);
+    (err as any).code = code;
+    (err as any).status = res.status;
+    throw err;
+  }
+
   if (res.status === 204) return undefined as T;
 
-  return res.json() as Promise<T>;
+  const json = await res.json();
+
+  if (json && typeof json === "object" && "success" in json && json.data !== undefined) {
+    return json.data as T;
+  }
+
+  return json as T;
 }
 
 export const apiClient = {
@@ -56,5 +128,7 @@ export const apiClient = {
     request<T>(path, { method: "POST", body }),
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PATCH", body }),
+  put: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: "PUT", body }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };

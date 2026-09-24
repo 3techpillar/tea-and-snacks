@@ -10,6 +10,8 @@ export type Product = {
   emoji: string;
   veg: boolean;
   tag?: string;
+  imageUrl?: string;
+  isAvailable?: boolean;
 };
 
 export type Vendor = {
@@ -26,6 +28,9 @@ export type Vendor = {
   specialty: string;
   upiId: string;
   highlights: string[];
+  imageUrl?: string;
+  isActive?: boolean;
+  isAcceptingOrders?: boolean;
 };
 
 export type Offer = {
@@ -50,8 +55,21 @@ export type PublicUser = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   vendorId?: string;
+  isActive: boolean;
+};
+
+/** Returned by login / register / refresh endpoints. */
+export type AuthResponse = {
+  user: PublicUser;
+};
+
+/** Shape of a token pair (only used internally, tokens travel via cookies). */
+export type TokenPair = {
+  accessToken: string;
+  refreshToken: string;
 };
 
 // ── Order types ────────────────────────────────────────────────────

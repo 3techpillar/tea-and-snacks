@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
+import path from "path";
 
 import { env } from "./config/env";
 import { connectDB } from "./config/db";
@@ -24,6 +25,7 @@ app.use(
 );
 app.use(express.json({ limit: "10mb" })); // 10mb for payment proof uploads
 app.use(cookieParser());
+app.use(express.static(path.join(process.cwd(), "public")));
 
 // ── API Routes ─────────────────────────────────────────────────────
 

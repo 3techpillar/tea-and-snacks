@@ -1,10 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { AuthError } from "./auth.middleware";
+import { AppError } from "../utils/errors";
+import { env } from "../config/env";
 
-/**
- * Global error handler — catches all errors thrown in controllers/services
- * and sends a consistent JSON error response.
- */
 export function errorMiddleware(
   err: Error,
   _req: Request,
@@ -13,27 +10,48 @@ export function errorMiddleware(
 ): void {
   console.error(err);
 
-  // Known auth errors carry their own status code
-  if (err instanceof AuthError) {
-    res.status(err.statusCode).json({ message: err.message, code: err.code });
+  if (err instanceof AppError) {
+    res.status(err.statusCode).json({
+      success: false,
+      error: {
+        code: err.code,
+        message: err.message,
+        ...(err.details ? { details: err.details } : {}),
+      },
+    });
     return;
   }
 
-  // Zod validation errors
   if (err.name === "ZodError") {
-    res.status(400).json({ message: "Validation failed", errors: err });
+    res.status(400).json({
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Validation failed",
+        details: err,
+      },
+    });
     return;
   }
 
-  // Application-level errors thrown with `new Error(...)` in services
-  // (e.g. "Invalid email or password.", "Product not found.", etc.)
-  // are treated as 400 Bad Request to preserve the original behavior
-  // where server functions returned these as user-facing messages.
-  if (err.message && !err.message.includes("Cannot")) {
-    res.status(400).json({ message: err.message });
+  if ((err as any).code === 11000) {
+    res.status(409).json({
+      success: false,
+      error: {
+        code: "CONFLICT",
+        message: "A resource with that identifier already exists.",
+      },
+    });
     return;
   }
 
-  // Unexpected errors
-  res.status(500).json({ message: "Internal server error" });
+  res.status(500).json({
+    success: false,
+    error: {
+      code: "INTERNAL_ERROR",
+      message: env.isProd
+        ? "Internal server error"
+        : err.message || "Internal server error",
+    },
+  });
 }

@@ -45,4 +45,12 @@ router.patch(
   vendorController.addNote,
 );
 
+// ── Menu Management ──
+router.post("/:vendorId/products", vendorController.createProduct);
+router.put("/:vendorId/products/:productId", vendorController.updateProduct);
+router.delete("/:vendorId/products/:productId", vendorController.deleteProduct);
+
+// ── Stall Profile ──
+router.put("/:vendorId/profile", vendorController.updateProfile);
+
 export default router;

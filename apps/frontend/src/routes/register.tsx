@@ -1,136 +1,181 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth-client";
+import { authApi } from "@/lib/api/auth";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { RegisterForm } from "@/components/auth/RegisterForm";
+import { OtpVerificationForm } from "@/components/auth/OtpVerificationForm";
 
 export const Route = createFileRoute("/register")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect:
-      typeof search["redirect"] === "string"
-        ? (search["redirect"] as string)
-        : "/",
-  }),
-  head: () => ({
-    meta: [
-      { title: "Create account — Easy Food" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
   component: RegisterPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      redirect: (search.redirect as string) || "/",
+    };
+  },
 });
 
 function RegisterPage() {
   const { redirect } = Route.useSearch();
-  const { register, registerError } = useAuth();
+  const { register, verifyEmail } = useAuth();
   const navigate = useNavigate();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyOnlyMode, setVerifyOnlyMode] = useState(false);
+  const [otp, setOtp] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const touch = (field: string) => setTouched((p) => ({ ...p, [field]: true }));
+
+  const fieldErrors = useMemo(() => {
+    const errs: Record<string, string> = {};
+    if (touched.name && !name.trim()) errs.name = "Name is required";
+    if (touched.email) {
+      if (!email.trim()) errs.email = "Email is required";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+        errs.email = "Enter a valid email address";
+    }
+    if (touched.phone) {
+      if (!phone.trim()) errs.phone = "Mobile number is required";
+      else if (phone.length !== 10) errs.phone = "Must be 10 digits";
+      else if (!/^[6-9]/.test(phone))
+        errs.phone = "Enter a valid Indian mobile number";
+    }
+    if (touched.password) {
+      if (!password) errs.password = "Password is required";
+      else if (password.length < 6)
+        errs.password = "Must be at least 6 characters";
+    }
+    if (touched.confirmPassword && password !== confirmPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+    return errs;
+  }, [name, email, phone, password, confirmPassword, touched]);
+
+  const isValid =
+    name.trim() &&
+    email.trim() &&
+    phone.length === 10 &&
+    /^[6-9]/.test(phone) &&
+    password.length >= 6 &&
+    password === confirmPassword;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched({
+      name: true,
+      email: true,
+      phone: true,
+      password: true,
+      confirmPassword: true,
+    });
+    setError(null);
+
+    if (!isValid) return;
+
     setSubmitting(true);
     try {
       await register({
         name: name.trim(),
         email: email.trim(),
-        phone: phone.trim(),
+        phone: `+91${phone}`,
         password,
         role: "customer",
       });
+      setIsVerifying(true);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Something went wrong.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setError("Please enter a valid email address first.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await authApi.resendOTP(email.trim());
+      setIsVerifying(true);
+      setOtp(""); // Clear any previous OTP
+      setError("A new verification code has been sent!"); // Show success message in error banner temporarily
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resend OTP.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length !== 6) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await verifyEmail({ email, otp });
       navigate({ to: redirect });
-    } catch {
-      /* error surfaced via registerError */
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Verification failed.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12">
-      <h1 className="text-2xl font-bold">Create your account</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        You'll use this to place orders and track them from any device.
-      </p>
-
-      <form onSubmit={submit} className="surface-card mt-6 space-y-4 p-5">
-        <div>
-          <label htmlFor="name" className="text-sm font-semibold">
-            Name
-          </label>
-          <input
-            id="name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div>
-          <label htmlFor="email" className="text-sm font-semibold">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div>
-          <label htmlFor="phone" className="text-sm font-semibold">
-            Phone (optional)
-          </label>
-          <input
-            id="phone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="text-sm font-semibold">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-
-        {registerError && (
-          <p className="text-sm font-medium text-destructive">
-            {registerError}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground disabled:opacity-60"
-        >
-          {submitting ? "Creating account…" : "Create account"}
-        </button>
-      </form>
-
-      <p className="mt-4 text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
-        <Link
-          to="/login"
-          search={{ redirect }}
-          className="font-semibold text-primary underline"
-        >
-          Sign in
-        </Link>
-      </p>
-    </div>
+    <AuthLayout>
+      {isVerifying ? (
+        <OtpVerificationForm
+          email={email}
+          setEmail={setEmail}
+          otp={otp}
+          setOtp={setOtp}
+          verifyOnlyMode={verifyOnlyMode}
+          submitting={submitting}
+          error={error}
+          fieldErrors={fieldErrors}
+          touch={touch}
+          submitVerification={submitVerification}
+          handleResendOTP={handleResendOTP}
+          onGoBack={() => setIsVerifying(false)}
+        />
+      ) : (
+        <RegisterForm
+          name={name}
+          setName={setName}
+          email={email}
+          setEmail={setEmail}
+          phone={phone}
+          setPhone={setPhone}
+          password={password}
+          setPassword={setPassword}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          submitting={submitting}
+          error={error}
+          fieldErrors={fieldErrors}
+          touch={touch}
+          submit={submit}
+          redirect={redirect}
+          onVerifyNowClick={() => {
+            setIsVerifying(true);
+            setVerifyOnlyMode(true);
+            setOtp("");
+            setError(null);
+          }}
+        />
+      )}
+    </AuthLayout>
   );
 }

@@ -11,6 +11,13 @@ export type UserDoc = HydratedDocument<{
   passwordHash: string;
   role: UserRole;
   vendorId?: string;
+  tokenVersion: number;
+  isActive: boolean;
+  isVerified: boolean;
+  otpCode?: string;
+  otpExpiresAt?: Date;
+  lastLoginAt?: Date;
+  refreshTokenHash?: string;
 }>;
 
 const userSchema = new Schema(
@@ -31,8 +38,14 @@ const userSchema = new Schema(
       default: "customer",
       required: true,
     },
-    // Set only when role === "vendor": which stall this account manages.
     vendorId: { type: String, ref: "Vendor" },
+    tokenVersion: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
+    otpCode: { type: String },
+    otpExpiresAt: { type: Date },
+    lastLoginAt: { type: Date },
+    refreshTokenHash: { type: String },
   },
   { timestamps: true },
 );
@@ -44,8 +57,10 @@ export function toPublicUser(user: UserDoc) {
     id: String(user._id),
     name: user.name,
     email: user.email,
+    phone: user.phone ?? undefined,
     role: user.role,
     vendorId: user.vendorId ?? undefined,
+    isActive: user.isActive,
   };
 }
 
