@@ -20,7 +20,8 @@ type AuthContextValue = {
     phone?: string;
     role?: "customer" | "vendor";
     vendorId?: string;
-  }) => Promise<CurrentUser>;
+  }) => Promise<{ message: string; userId: string }>;
+  verifyEmail: (input: { email: string; otp: string }) => Promise<CurrentUser>;
   logout: () => Promise<void>;
   changePassword: (input: ChangePasswordInput) => Promise<CurrentUser>;
   updateProfile: (input: UpdateProfileInput) => Promise<CurrentUser>;
@@ -64,6 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: (input: Parameters<AuthContextValue["register"]>[0]) =>
       authApi.register(input),
+  });
+
+  const verifyEmailMutation = useMutation({
+    mutationFn: (input: Parameters<AuthContextValue["verifyEmail"]>[0]) =>
+      authApi.verifyEmail(input),
     onSuccess: (user) => queryClient.setQueryData(AUTH_QUERY_KEY, user),
   });
 
@@ -98,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: user !== null,
     login: (input) => loginMutation.mutateAsync(input),
     register: (input) => registerMutation.mutateAsync(input),
+    verifyEmail: (input) => verifyEmailMutation.mutateAsync(input),
     logout: () => logoutMutation.mutateAsync().then(() => undefined),
     changePassword: (input) => changePasswordMutation.mutateAsync(input),
     updateProfile: (input) => updateProfileMutation.mutateAsync(input),

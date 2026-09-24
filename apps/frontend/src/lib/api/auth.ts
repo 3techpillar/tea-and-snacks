@@ -29,7 +29,19 @@ type AuthData = { user: PublicUser };
 
 export const authApi = {
   register: (data: RegisterInput) =>
-    apiClient.post<AuthData>("/api/auth/register", data).then((d) => d.user),
+    apiClient.post<{ message: string; userId: string }>("/api/auth/register", data),
+
+  verifyEmail: (data: { email: string; otp: string }) =>
+    apiClient.post<AuthData>("/api/auth/verify-email", data).then((d) => d.user),
+
+  forgotPassword: (email: string) =>
+    apiClient.post<{ message: string }>("/api/auth/forgot-password", { email }),
+
+  resendOTP: (email: string) =>
+    apiClient.post<{ message: string }>("/api/auth/resend-otp", { email }),
+
+  resetPassword: (data: { email: string; otp: string; newPassword: string }) =>
+    apiClient.post<{ message: string }>("/api/auth/reset-password", data),
 
   login: (data: LoginInput) =>
     apiClient.post<AuthData>("/api/auth/login", data).then((d) => d.user),

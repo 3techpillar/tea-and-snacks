@@ -32,8 +32,27 @@ const changePasswordSchema = z.object({
     .max(128, "Password is too long"),
 });
 
+const verifyEmailSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  otp: z.string().length(6, "OTP must be 6 digits"),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
+
+const resetPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  otp: z.string().length(6, "OTP must be 6 digits"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 router.post("/register", authLimiter, validate(registerSchema), authController.register);
+router.post("/verify-email", authLimiter, validate(verifyEmailSchema), authController.verifyEmail);
+router.post("/resend-otp", authLimiter, validate(forgotPasswordSchema), authController.resendOTP);
 router.post("/login", authLimiter, validate(loginSchema), authController.login);
+router.post("/forgot-password", authLimiter, validate(forgotPasswordSchema), authController.forgotPassword);
+router.post("/reset-password", authLimiter, validate(resetPasswordSchema), authController.resetPassword);
 router.post("/refresh", authController.refresh);
 
 router.post("/logout", authMiddleware, authController.logout);

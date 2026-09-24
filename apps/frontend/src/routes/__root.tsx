@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -83,22 +84,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { location } = useRouterState();
+  const isAuthRoute = ["/login", "/register", "/forgot-password"].includes(location.pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <main className="flex-1 pb-16 sm:pb-0">
-              <Outlet />
-            </main>
-            <footer className="border-t border-border pb-20 pt-8 text-center text-sm text-muted-foreground sm:pb-8">
-              Easy Food · demo build, backed by MongoDB
-            </footer>
-            <BottomNav />
-          </div>
+          {isAuthRoute ? (
+            <div className="flex h-screen flex-col overflow-hidden bg-background">
+              <div className="lg:hidden">
+                <Header />
+              </div>
+              <main className="relative flex-1 overflow-hidden">
+                <Outlet />
+              </main>
+            </div>
+          ) : (
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1 pb-16 sm:pb-0">
+                <Outlet />
+              </main>
+              <footer className="border-t border-border pb-20 pt-8 text-center text-sm text-muted-foreground sm:pb-8">
+                Easy Food · demo build, backed by MongoDB
+              </footer>
+              <BottomNav />
+            </div>
+          )}
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>

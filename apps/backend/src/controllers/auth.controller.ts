@@ -1,7 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import {
   registerUser,
+  verifyEmail as verifyEmailService,
+  resendOTP as resendOTPService,
   loginUser,
+  forgotPassword as forgotPasswordService,
+  resetPassword as resetPasswordService,
   refreshTokens,
   changePassword,
   updateProfile,
@@ -49,9 +53,33 @@ export async function register(
   next: NextFunction,
 ) {
   try {
-    const { user, tokens } = await registerUser(req.body);
+    const result = await registerUser(req.body);
+    sendCreated(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resendOTP(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email } = req.body;
+    const result = await resendOTPService(email);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function verifyEmail(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { email, otp } = req.body;
+    const { user, tokens } = await verifyEmailService(email, otp);
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-    sendCreated(res, { user });
+    sendSuccess(res, { user });
   } catch (err) {
     next(err);
   }
@@ -127,6 +155,34 @@ export async function updateProfileHandler(
     }
     const { user } = await updateProfile(req.user.id, req.body);
     sendSuccess(res, { user, message: "Profile updated successfully." });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function forgotPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { email } = req.body;
+    const result = await forgotPasswordService(email);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const result = await resetPasswordService(email, otp, newPassword);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }

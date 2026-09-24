@@ -13,6 +13,9 @@ export type UserDoc = HydratedDocument<{
   vendorId?: string;
   tokenVersion: number;
   isActive: boolean;
+  isVerified: boolean;
+  otpCode?: string;
+  otpExpiresAt?: Date;
   lastLoginAt?: Date;
   refreshTokenHash?: string;
 }>;
@@ -38,6 +41,9 @@ const userSchema = new Schema(
     vendorId: { type: String, ref: "Vendor" },
     tokenVersion: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
+    otpCode: { type: String },
+    otpExpiresAt: { type: Date },
     lastLoginAt: { type: Date },
     refreshTokenHash: { type: String },
   },

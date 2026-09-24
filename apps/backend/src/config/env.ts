@@ -30,4 +30,9 @@ export const env = {
 
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:5173",
   isProd,
+
+  smtpHost: process.env.SMTP_HOST || "",
+  smtpPort: parseInt(process.env.SMTP_PORT || "465", 10),
+  smtpUser: process.env.SMTP_USER || "",
+  smtpPass: process.env.SMTP_PASS || "",
 };

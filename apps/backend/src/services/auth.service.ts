@@ -12,8 +12,11 @@ import {
   ForbiddenError,
   ConflictError,
   ValidationError,
+  NotFoundError,
 } from "../utils/errors";
 import type { PublicUser, TokenPair } from "@tea-and-snacks/shared";
+import { generateOTP } from "../utils/otp.util";
+import { EmailService, EmailTemplates } from "../utils/email.util";
 
 export type RegisterInput = {
   name: string;
@@ -57,7 +60,7 @@ function issueTokenPair(user: {
 
 export async function registerUser(
   data: RegisterInput,
-): Promise<{ user: PublicUser; tokens: TokenPair }> {
+): Promise<{ message: string; userId: string }> {
   await connectDB();
 
   if (data.role === "vendor") {
@@ -71,24 +74,87 @@ export async function registerUser(
     }
   }
 
-  if (await User.exists({ email: data.email })) {
+  // Check if unverified user exists, we can allow re-register or resend OTP.
+  // For simplicity, we just check if verified user exists.
+  let user = await User.findOne({ email: data.email });
+  if (user && user.isVerified) {
     throw new ConflictError("An account with this email already exists.");
   }
 
-  const user = await User.create({
-    name: data.name,
-    email: data.email,
-    phone: data.phone,
-    role: data.role ?? "customer",
-    vendorId: data.role === "vendor" ? data.vendorId : undefined,
-    passwordHash: await hashPassword(data.password),
-    tokenVersion: 0,
-    isActive: true,
-    lastLoginAt: new Date(),
-  });
+  const otp = generateOTP();
+  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  const passwordHash = await hashPassword(data.password);
+
+  if (user && !user.isVerified) {
+    // Update existing unverified account
+    user.name = data.name;
+    user.passwordHash = passwordHash;
+    user.phone = data.phone;
+    user.role = data.role ?? "customer";
+    user.vendorId = data.role === "vendor" ? data.vendorId : undefined;
+    user.otpCode = otp;
+    user.otpExpiresAt = otpExpiresAt;
+    await user.save();
+  } else {
+    user = await User.create({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      role: data.role ?? "customer",
+      vendorId: data.role === "vendor" ? data.vendorId : undefined,
+      passwordHash,
+      tokenVersion: 0,
+      isActive: true,
+      isVerified: false,
+      otpCode: otp,
+      otpExpiresAt,
+    });
+  }
+
+  // Send email asynchronously
+  EmailService.send(user.email, EmailTemplates.VerificationOTP(otp)).catch(console.error);
+
+  if (user && !user.isVerified && user.createdAt.getTime() < Date.now() - 5000) {
+    return { message: "Check mail and verify the user mail to login", userId: String(user._id) };
+  }
+
+  return { message: "OTP sent to email", userId: String(user._id) };
+}
+
+export async function resendOTP(email: string): Promise<{ message: string }> {
+  await connectDB();
+  const user = await User.findOne({ email });
+
+  if (!user) throw new NotFoundError("User not found.");
+  if (user.isVerified) throw new ConflictError("Email is already verified.");
+
+  const otp = generateOTP();
+  user.otpCode = otp;
+  user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  await user.save();
+
+  EmailService.send(user.email, EmailTemplates.VerificationOTP(otp)).catch(console.error);
+
+  return { message: "A new OTP has been sent to your email." };
+}
+
+export async function verifyEmail(email: string, otp: string): Promise<{ user: PublicUser; tokens: TokenPair }> {
+  await connectDB();
+  const user = await User.findOne({ email });
+
+  if (!user) throw new NotFoundError("User not found.");
+  if (user.isVerified) throw new ConflictError("Email is already verified.");
+  
+  if (user.otpCode !== otp || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
+    throw new ValidationError("Invalid or expired OTP.");
+  }
+
+  user.isVerified = true;
+  user.otpCode = undefined;
+  user.otpExpiresAt = undefined;
+  user.lastLoginAt = new Date();
 
   const tokens = issueTokenPair(user);
-
   user.refreshTokenHash = await hashPassword(tokens.refreshToken);
   await user.save();
 
@@ -105,6 +171,10 @@ export async function loginUser(
     throw new UnauthorizedError("Invalid email or password.");
   }
 
+  if (!user.isVerified) {
+    throw new UnauthorizedError("Please verify your email address first.");
+  }
+
   if (!user.isActive) {
     throw new ForbiddenError("Your account has been deactivated. Contact support.");
   }
@@ -116,6 +186,47 @@ export async function loginUser(
   await user.save();
 
   return { user: toPublicUser(user), tokens };
+}
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  await connectDB();
+  const user = await User.findOne({ email });
+
+  if (!user || !user.isVerified || !user.isActive) {
+    // Do not leak information, always return the same message
+    return { message: "If your email is registered and verified, you will receive an OTP shortly." };
+  }
+
+  const otp = generateOTP();
+  user.otpCode = otp;
+  user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+  await user.save();
+
+  EmailService.send(user.email, EmailTemplates.PasswordResetOTP(otp)).catch(console.error);
+
+  return { message: "If your email is registered and verified, you will receive an OTP shortly." };
+}
+
+export async function resetPassword(email: string, otp: string, newPassword: string): Promise<{ message: string }> {
+  await connectDB();
+  const user = await User.findOne({ email });
+
+  if (!user) throw new ValidationError("Invalid or expired OTP.");
+
+  if (user.otpCode !== otp || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
+    throw new ValidationError("Invalid or expired OTP.");
+  }
+
+  user.passwordHash = await hashPassword(newPassword);
+  user.otpCode = undefined;
+  user.otpExpiresAt = undefined;
+  // Invalidate existing sessions
+  user.tokenVersion += 1;
+  user.refreshTokenHash = undefined;
+  
+  await user.save();
+
+  return { message: "Password reset successful. You can now log in." };
 }
 
 export async function refreshTokens(
