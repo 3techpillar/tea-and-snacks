@@ -41,4 +41,7 @@ export const vendorApi = {
     apiClient.put(`/api/vendor/${vendorId}/products/${productId}`, data),
   deleteProduct: (vendorId: string, productId: string) =>
     apiClient.delete(`/api/vendor/${vendorId}/products/${productId}`),
+
+  updateProfile: (vendorId: string, data: any) =>
+    apiClient.put(`/api/vendor/${vendorId}/profile`, data),
 };

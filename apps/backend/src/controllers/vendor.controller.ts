@@ -153,3 +153,32 @@ export async function deleteProduct(req: Request, res: Response, next: NextFunct
     next(err);
   }
 }
+
+// ── Stall Profile ────────────────────────────────────────────────────────
+
+export async function updateProfile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const vendorId = req.params.vendorId as string;
+    requireVendorAccess(req.user, vendorId);
+
+    const { Vendor } = await import("../models/Vendor.model");
+    
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) {
+      throw new NotFoundError("Stall not found");
+    }
+
+    const { tagline, counter, hours, upiId, isAcceptingOrders } = req.body;
+    
+    if (tagline !== undefined) vendor.tagline = tagline;
+    if (counter !== undefined) vendor.counter = counter;
+    if (hours !== undefined) vendor.hours = hours;
+    if (upiId !== undefined) vendor.upiId = upiId;
+    if (isAcceptingOrders !== undefined) vendor.isAcceptingOrders = isAcceptingOrders;
+
+    await vendor.save();
+    res.json(vendor);
+  } catch (err) {
+    next(err);
+  }
+}
