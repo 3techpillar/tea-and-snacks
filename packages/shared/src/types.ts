@@ -10,6 +10,8 @@ export type Product = {
   emoji: string;
   veg: boolean;
   tag?: string;
+  imageUrl?: string;
+  isAvailable?: boolean;
 };
 
 export type Vendor = {
@@ -26,6 +28,9 @@ export type Vendor = {
   specialty: string;
   upiId: string;
   highlights: string[];
+  imageUrl?: string;
+  isActive?: boolean;
+  isAcceptingOrders?: boolean;
 };
 
 export type Offer = {

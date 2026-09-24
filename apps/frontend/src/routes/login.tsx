@@ -58,7 +58,9 @@ function LoginPage() {
     setSubmitting(true);
     try {
       const user = await login({ email: email.trim(), password });
-      if (user?.role === "vendor" && user.vendorId) {
+      if (user?.role === "admin") {
+        navigate({ to: "/admin/orders" });
+      } else if (user?.role === "vendor" && user.vendorId) {
         navigate({
           to: "/vendor/$vendorId",
           params: { vendorId: user.vendorId },

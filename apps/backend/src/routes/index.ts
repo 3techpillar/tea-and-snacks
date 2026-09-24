@@ -4,6 +4,8 @@ import authRoutes from "./auth.routes";
 import catalogRoutes from "./catalog.routes";
 import ordersRoutes from "./orders.routes";
 import vendorRoutes from "./vendor.routes";
+import adminRoutes from "./admin.routes";
+import uploadRoutes from "./upload.routes";
 
 const router = Router();
 
@@ -14,6 +16,8 @@ router.use("/auth", authRoutes);
 router.use("/catalog", catalogRoutes);
 router.use("/orders", ordersRoutes);
 router.use("/vendor", vendorRoutes);
+router.use("/admin", adminRoutes);
+router.use("/upload", uploadRoutes);
 
 export default router;
 

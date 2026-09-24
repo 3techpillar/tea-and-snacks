@@ -5,6 +5,7 @@ import { useCatalog } from "@/lib/catalog-client";
 import { useAuth } from "@/lib/auth-client";
 import { useOrderRoomUpdates } from "@/lib/realtime-client";
 import { vendorApi } from "@/lib/api/vendor";
+import { Plus, X, Upload } from "lucide-react";
 import {
   statusToneClass,
   vendorSlice,
@@ -47,6 +48,7 @@ function VendorDashboard() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Filter>("Live");
   const [proof, setProof] = useState<DemoOrder | null>(null);
+  const [activeTab, setActiveTab] = useState<"orders" | "menu">("orders");
 
   const hasAccess =
     user?.role === "admin" ||
@@ -179,6 +181,29 @@ function VendorDashboard() {
         </Link>
       </div>
 
+      <div className="mt-5 mb-6 border-b border-border">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium ${
+              activeTab === "orders" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+            }`}
+          >
+            Live Orders
+          </button>
+          <button
+            onClick={() => setActiveTab("menu")}
+            className={`whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium ${
+              activeTab === "menu" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+            }`}
+          >
+            Menu Management
+          </button>
+        </nav>
+      </div>
+
+      {activeTab === "orders" && (
+        <>
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat
           label="Live orders"
@@ -374,6 +399,12 @@ function VendorDashboard() {
           </div>
         </div>
       )}
+      </>
+      )}
+
+      {activeTab === "menu" && (
+        <MenuManagementTab vendorId={vendorId} />
+      )}
     </div>
   );
 }
@@ -410,6 +441,190 @@ function Stat({
     <div className={`rounded-2xl p-3 ${tone}`}>
       <p className="text-xs font-semibold opacity-80">{label}</p>
       <p className="mt-1 font-display text-xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function MenuManagementTab({ vendorId }: { vendorId: string }) {
+  const { products } = useCatalog();
+  const queryClient = useQueryClient();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  const vendorProducts = products.filter(p => p.vendorId === vendorId);
+
+  const deleteMutation = useMutation({
+    mutationFn: (productId: string) => vendorApi.deleteProduct(vendorId, productId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["catalog"] }),
+  });
+
+  return (
+    <div className="space-y-6 pt-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Manage Menu</h2>
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" /> Add Item
+        </button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {vendorProducts.map(p => (
+          <div key={p.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{p.emoji}</span>
+              <div>
+                <h3 className="font-bold">{p.name}</h3>
+                <p className="text-sm text-muted-foreground">₹{p.price}</p>
+                {p.tag && <span className="mt-1 inline-block rounded-full bg-accent px-2 py-0.5 text-xs">{p.tag}</span>}
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.isAvailable !== false ? "bg-mint-soft text-mint-ink" : "bg-destructive/20 text-destructive"}`}>
+                {p.isAvailable !== false ? "Available" : "Out of Stock"}
+              </span>
+              <button 
+                onClick={() => {
+                  if (confirm(`Remove ${p.name}?`)) {
+                    deleteMutation.mutate(p.id);
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+                className="text-xs font-medium text-destructive hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+        {vendorProducts.length === 0 && (
+          <div className="col-span-full py-8 text-center text-muted-foreground">
+            No items in your menu. Add some food!
+          </div>
+        )}
+      </div>
+
+      {isAddModalOpen && (
+        <AddProductModal vendorId={vendorId} onClose={() => setIsAddModalOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+function AddProductModal({ vendorId, onClose }: { vendorId: string, onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState({
+    id: "", name: "", price: "", emoji: "🍲", veg: true, tag: ""
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      let imageUrl = "";
+      if (file) {
+        const formDataUpload = new FormData();
+        formDataUpload.append("image", file);
+        const API_BASE = import.meta.env.VITE_API_URL ?? "";
+        const res = await fetch(`${API_BASE}/api/upload`, {
+          method: "POST",
+          body: formDataUpload,
+          credentials: "include"
+        });
+        if (!res.ok) throw new Error("Image upload failed");
+        const json = await res.json();
+        imageUrl = json.data?.imageUrl || json.imageUrl;
+      }
+
+      await vendorApi.createProduct(vendorId, {
+        ...formData,
+        price: Number(formData.price),
+        imageUrl
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Failed to create product");
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl border border-border">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold">Add Menu Item</h2>
+          <button onClick={onClose} className="rounded-full p-2 hover:bg-accent"><X className="h-4 w-4" /></button>
+        </div>
+
+        {error && <div className="mb-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Item ID (slug)</label>
+              <input required value={formData.id} onChange={e => setFormData({...formData, id: e.target.value.toLowerCase().replace(/\s+/g, '-')})} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="e.g. veg-momo" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Name</label>
+              <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Veg Momos" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Price (₹)</label>
+              <input required type="number" min="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="80" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Emoji</label>
+              <input required value={formData.emoji} onChange={e => setFormData({...formData, emoji: e.target.value})} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="🥟" />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Dietary</label>
+              <select value={formData.veg ? "veg" : "non-veg"} onChange={e => setFormData({...formData, veg: e.target.value === "veg"})} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="veg">Veg</option>
+                <option value="non-veg">Non-Veg</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Tag (Optional)</label>
+              <input value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Bestseller" />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Item Image (Optional)</label>
+            <div className="mt-1 flex justify-center rounded-md border-2 border-dashed border-border px-6 py-4 transition-colors hover:bg-accent/30">
+              <div className="text-center">
+                <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                <div className="mt-2 text-sm text-muted-foreground">
+                  <label className="relative cursor-pointer rounded-md font-semibold text-primary hover:underline">
+                    <span>Upload a file</span>
+                    <input type="file" className="sr-only" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
+                {file && <p className="mt-1 text-xs text-foreground font-medium">{file.name}</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3 border-t border-border pt-4">
+            <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent">Cancel</button>
+            <button type="submit" disabled={isSubmitting} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              {isSubmitting ? "Adding..." : "Add Item"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

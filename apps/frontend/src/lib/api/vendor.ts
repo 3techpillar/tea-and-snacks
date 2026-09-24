@@ -34,4 +34,11 @@ export const vendorApi = {
       `/api/vendor/${vendorId}/orders/${orderId}/note`,
       { note },
     ),
+    
+  createProduct: (vendorId: string, data: any) =>
+    apiClient.post(`/api/vendor/${vendorId}/products`, data),
+  updateProduct: (vendorId: string, productId: string, data: any) =>
+    apiClient.put(`/api/vendor/${vendorId}/products/${productId}`, data),
+  deleteProduct: (vendorId: string, productId: string) =>
+    apiClient.delete(`/api/vendor/${vendorId}/products/${productId}`),
 };

@@ -23,7 +23,9 @@ const vendorSchema = new Schema(
     specialty: { type: String, required: true },
     upiId: { type: String, required: true },
     highlights: { type: [String], default: [] },
+    imageUrl: { type: String },
     isActive: { type: Boolean, default: true },
+    isAcceptingOrders: { type: Boolean, default: true },
   },
   { timestamps: true, _id: false },
 );
