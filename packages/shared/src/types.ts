@@ -56,6 +56,16 @@ export type Catalog = {
   offers: Offer[];
 };
 
+export type PaginatedResponse<T> = {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
+
 // ── Auth types ─────────────────────────────────────────────────────
 
 export type UserRole = "customer" | "vendor" | "admin";
