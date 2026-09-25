@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { productImage, vendorImage } from "@/lib/images";
-import { quickSearches, suggest } from "@/lib/search";
-import { useCatalog } from "@/lib/catalog-client";
+import { quickSearches } from "@/lib/search";
+import { useQuery } from "@tanstack/react-query";
+import { catalogApi } from "@/lib/api/catalog";
 
 export function SearchBar({
   initialQuery = "",
@@ -15,12 +16,20 @@ export function SearchBar({
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const boxRef = useRef<HTMLDivElement>(null);
-  const { vendors, products } = useCatalog();
+  const [debouncedQ, setDebouncedQ] = useState(initialQuery);
 
-  const results = useMemo(
-    () => suggest(q, vendors, products),
-    [q, vendors, products],
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(timer);
+  }, [q]);
+
+  const searchQuery = useQuery({
+    queryKey: ["search", debouncedQ],
+    queryFn: () => catalogApi.searchCatalog(debouncedQ),
+    enabled: debouncedQ.trim().length > 0,
+  });
+
+  const results = (searchQuery.data ?? []).slice(0, 6);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {

@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ProductCard } from "@/components/ProductCard";
 import { SearchBar } from "@/components/SearchBar";
 import { VendorCard } from "@/components/VendorCard";
-import { searchAll } from "@/lib/search";
-import { useCatalog } from "@/lib/catalog-client";
+import { useQuery } from "@tanstack/react-query";
+import { catalogApi } from "@/lib/api/catalog";
 
 export const Route = createFileRoute("/search")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -27,10 +27,19 @@ export const Route = createFileRoute("/search")({
   component: SearchPage,
 });
 
+
 function SearchPage() {
   const { q } = Route.useSearch();
-  const { vendors, products } = useCatalog();
-  const results = searchAll(q, vendors, products);
+  
+  const searchQuery = useQuery({
+    queryKey: ["search", q],
+    queryFn: () => catalogApi.searchCatalog(q),
+    enabled: q.trim().length > 0,
+  });
+
+  const results = searchQuery.data ?? [];
+  const isLoading = searchQuery.isFetching;
+
   const dishes = results.flatMap((r) =>
     r.kind === "product" ? [r.product] : [],
   );
