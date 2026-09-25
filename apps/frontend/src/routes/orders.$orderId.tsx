@@ -5,7 +5,8 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api/orders";
 import { orderStatuses } from "@/lib/orders";
 import { useAuth } from "@/lib/auth-client";
-import { useOrderRoomUpdates } from "@/lib/realtime-client";
+import { useOrderRoomUpdates, useIsSocketConnected } from "@/lib/realtime-client";
+import { OrderChat } from "@/components/OrderChat";
 
 export const Route = createFileRoute("/orders/$orderId")({
   head: () => ({
@@ -32,14 +33,14 @@ function OrderPage() {
   const { vendorById } = useCatalog();
   const queryClient = useQueryClient();
 
+  const isSocketConnected = useIsSocketConnected();
   const queryKey = ["orders", orderId] as const;
   const orderQuery = useQuery({
     queryKey,
     queryFn: () => ordersApi.getById(orderId),
     enabled: !!user,
-    // Socket.io push (below) keeps this fresh instantly when it's attached;
-    // this poll is only the fallback if a build target never wires it up.
-    refetchInterval: 15_000,
+    // Socket.io push keeps this fresh; only poll if the socket disconnects.
+    refetchInterval: isSocketConnected ? false : 15_000,
   });
 
   useOrderRoomUpdates(user ? `order:${orderId}` : undefined, () =>
@@ -49,6 +50,11 @@ function OrderPage() {
   const uploadProof = useMutation({
     mutationFn: (input: { fileName: string; dataUrl: string }) =>
       ordersApi.uploadProof(orderId, input),
+    onSuccess: (order) => queryClient.setQueryData(queryKey, order),
+  });
+
+  const cancelOrder = useMutation({
+    mutationFn: () => ordersApi.cancelOrder(orderId),
     onSuccess: (order) => queryClient.setQueryData(queryKey, order),
   });
 
@@ -139,7 +145,7 @@ function OrderPage() {
         {isCancelled ? (
           <p className="mt-3 rounded-xl bg-chili-soft px-4 py-3 text-sm font-semibold text-chili-ink">
             This order was cancelled.
-            {order.vendorNote ? ` ${order.vendorNote}` : ""}
+            {order.cancellationReason ? ` Reason: ${order.cancellationReason}` : order.vendorNote ? ` ${order.vendorNote}` : ""}
           </p>
         ) : (
           <div className="mt-4 flex items-center gap-2">
@@ -160,6 +166,22 @@ function OrderPage() {
           </div>
         )}
       </section>
+
+      {order.status === "Pending" && (
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => {
+              if (confirm("Are you sure you want to cancel this order?")) {
+                cancelOrder.mutate();
+              }
+            }}
+            disabled={cancelOrder.isPending}
+            className="text-sm font-semibold text-destructive hover:underline disabled:opacity-50"
+          >
+            {cancelOrder.isPending ? "Cancelling..." : "Cancel Order"}
+          </button>
+        </div>
+      )}
 
       {!isCancelled && (
         <section className="surface-card mt-5 p-5">
@@ -266,6 +288,8 @@ function OrderPage() {
           <span>₹{order.total}</span>
         </div>
       </section>
+
+      <OrderChat order={order} />
     </div>
   );
 }

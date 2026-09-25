@@ -112,6 +112,13 @@ export type OrderItem = {
   price: number;
 };
 
+export type OrderMessage = {
+  senderRole: "customer" | "vendor" | "admin";
+  senderName: string;
+  text: string;
+  timestamp: string;
+};
+
 export type DemoOrder = {
   id: string;
   token: string;
@@ -130,6 +137,9 @@ export type DemoOrder = {
   needsRebooking?: boolean;
   /** Shown to the customer when admin intervenes. */
   adminNote?: string;
+  messages: OrderMessage[];
+  cancelledBy?: "customer" | "vendor" | "admin";
+  cancellationReason?: string;
 };
 
 /** Richer view used only by the admin dashboard. */

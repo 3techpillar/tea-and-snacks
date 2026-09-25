@@ -124,3 +124,66 @@ export async function uploadPaymentProof(
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
   return demoOrder;
 }
+
+function checkOrderAccess(order: any, user: PublicUser) {
+  if (user.role === "admin") return;
+  if (user.role === "customer") {
+    if (String(order.userId) !== user.id) {
+      throw new Error("You don't have access to this order.");
+    }
+  } else if (user.role === "vendor") {
+    if (!order.items.some((i: any) => i.vendorId === user.vendorId)) {
+      throw new Error("You don't have access to this order.");
+    }
+  }
+}
+
+export async function addChatMessage(orderId: string, text: string, user: PublicUser): Promise<DemoOrder> {
+  await connectDB();
+  const order = await Order.findOne({ displayId: orderId });
+  if (!order) throw new Error("Order not found.");
+  
+  checkOrderAccess(order, user);
+
+  order.messages.push({
+    senderRole: user.role,
+    senderName: user.name,
+    text,
+    timestamp: new Date()
+  });
+
+  await order.save();
+
+  const demoOrder = toDemoOrder(order);
+  emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
+  return demoOrder;
+}
+
+export async function cancelOrder(orderId: string, reason: string | undefined, user: PublicUser): Promise<DemoOrder> {
+  await connectDB();
+  const order = await Order.findOne({ displayId: orderId });
+  if (!order) throw new Error("Order not found.");
+  
+  checkOrderAccess(order, user);
+
+  if (order.status === "Cancelled" || order.status === "Completed") {
+    throw new Error(`Order is already ${order.status}`);
+  }
+
+  if (user.role === "customer" && order.status !== "Pending") {
+    throw new Error("Customers can only cancel orders when they are Pending.");
+  }
+
+  order.status = "Cancelled";
+  order.statusUpdatedAt = new Date();
+  order.cancelledBy = user.role;
+  if (reason) {
+    order.cancellationReason = reason;
+  }
+
+  await order.save();
+
+  const demoOrder = toDemoOrder(order);
+  emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
+  return demoOrder;
+}

@@ -16,6 +16,13 @@ export type OrderItemDoc = {
   price: number;
 };
 
+export type OrderMessageDoc = {
+  senderRole: "customer" | "vendor" | "admin";
+  senderName: string;
+  text: string;
+  timestamp: Date;
+};
+
 export type OrderDoc = HydratedDocument<{
   displayId: string;
   token: string;
@@ -35,6 +42,9 @@ export type OrderDoc = HydratedDocument<{
   needsRebooking: boolean;
   adminNote?: string;
   lastVendorNotifiedAt?: Date;
+  messages: OrderMessageDoc[];
+  cancelledBy?: "customer" | "vendor" | "admin";
+  cancellationReason?: string;
 }>;
 
 const orderItemSchema = new Schema<OrderItemDoc>(
@@ -47,6 +57,16 @@ const orderItemSchema = new Schema<OrderItemDoc>(
     emoji: { type: String, required: true },
     qty: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true, min: 0 },
+  },
+  { _id: false },
+);
+
+const orderMessageSchema = new Schema<OrderMessageDoc>(
+  {
+    senderRole: { type: String, enum: ["customer", "vendor", "admin"], required: true },
+    senderName: { type: String, required: true },
+    text: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now },
   },
   { _id: false },
 );
@@ -90,6 +110,9 @@ const orderSchema = new Schema(
     needsRebooking: { type: Boolean, default: false },
     adminNote: String,
     lastVendorNotifiedAt: Date,
+    messages: { type: [orderMessageSchema], default: [] },
+    cancelledBy: { type: String, enum: ["customer", "vendor", "admin"] },
+    cancellationReason: String,
   },
   { timestamps: true },
 );
