@@ -96,7 +96,7 @@ function AdminOrdersDashboard() {
                       <li key={i} className="flex items-start justify-between gap-2">
                         <span>
                           <span className="mr-1">{item.emoji}</span>
-                          <span className="text-muted-foreground">{item.qty}x</span> {item.name}
+                          <span className="text-muted-foreground">{item.qty}x</span> {item.name} {item.variantName ? `(${item.variantName})` : ""}
                         </span>
                       </li>
                     ))}

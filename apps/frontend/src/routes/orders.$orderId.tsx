@@ -251,11 +251,11 @@ function OrderPage() {
         <div className="mt-3 space-y-2 text-sm">
           {order.items.map((i, idx) => (
             <div
-              key={i.productId ?? `${i.name}-${idx}`}
+              key={i.variantId ? `${i.productId}-${i.variantId}` : i.productId ?? `${i.name}-${idx}`}
               className="flex justify-between"
             >
               <span className="text-muted-foreground">
-                {i.qty} × {i.emoji} {i.name}
+                {i.qty} × {i.emoji} {i.name} {i.variantName ? `(${i.variantName})` : ""}
               </span>
               <span className="font-semibold">₹{i.price * i.qty}</span>
             </div>

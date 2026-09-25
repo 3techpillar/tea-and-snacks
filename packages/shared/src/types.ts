@@ -2,6 +2,12 @@
 
 export type AccentColor = "mango" | "chili" | "mint" | "berry" | "sky" | "grape";
 
+export type ProductVariant = {
+  id: string;
+  name: string;
+  price: number;
+};
+
 export type Product = {
   id: string;
   vendorId: string;
@@ -12,6 +18,9 @@ export type Product = {
   tag?: string;
   imageUrl?: string;
   isAvailable?: boolean;
+  hasVariants?: boolean;
+  variants?: ProductVariant[];
+  variantLabel?: string;
 };
 
 export type Vendor = {
@@ -86,6 +95,8 @@ export type OrderItem = {
   productId?: string;
   vendorId?: string;
   name: string;
+  variantId?: string;
+  variantName?: string;
   emoji: string;
   qty: number;
   price: number;

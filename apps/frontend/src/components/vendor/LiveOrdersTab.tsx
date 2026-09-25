@@ -169,9 +169,9 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
 
                 <div className="mt-3 space-y-1 text-sm">
                   {slice.items.map((i, idx) => (
-                    <div key={i.productId ?? `${i.name}-${idx}`} className="flex justify-between">
+                    <div key={i.variantId ? `${i.productId}-${i.variantId}` : i.productId ?? `${i.name}-${idx}`} className="flex justify-between">
                       <span className="text-muted-foreground">
-                        {i.qty} × {i.emoji} {i.name}
+                        {i.qty} × {i.emoji} {i.name} {i.variantName ? `(${i.variantName})` : ""}
                       </span>
                       <span className="font-semibold">₹{i.price * i.qty}</span>
                     </div>

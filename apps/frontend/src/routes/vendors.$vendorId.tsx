@@ -90,7 +90,7 @@ function VendorMenu() {
 
       <header className="relative mt-4 overflow-hidden rounded-3xl">
         <img
-          src={vendorImage(vendor.id)}
+          src={vendor.imageUrl || vendorImage(vendor.id)}
           alt={`${vendor.name} — ${vendor.cuisine}`}
           width={800}
           height={600}

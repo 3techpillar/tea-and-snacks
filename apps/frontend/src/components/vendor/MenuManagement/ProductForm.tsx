@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, Plus, Trash2 } from "lucide-react";
 import { vendorApi } from "@/lib/api/vendor";
+import type { ProductVariant } from "@tea-and-snacks/shared";
+import { VariantManager } from "./VariantManager";
 
-export function ProductFormModal({
+export function ProductForm({
   vendorId,
   editData,
   onClose,
@@ -23,7 +25,11 @@ export function ProductFormModal({
     veg: (editData?.veg as boolean) ?? true,
     tag: (editData?.tag as string) || "",
     isAvailable: (editData?.isAvailable as boolean) ?? true,
+    hasVariants: (editData?.hasVariants as boolean) ?? false,
+    variantLabel: (editData?.variantLabel as string) || "Options",
+    variants: (editData?.variants as ProductVariant[]) || [],
   });
+  
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>((editData?.imageUrl as string) || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,15 +39,15 @@ export function ProductFormModal({
     setFormData((prev) => ({
       ...prev,
       name,
-      ...(!isEdit
-        ? {
-            id: name
-              .toLowerCase()
-              .trim()
-              .replace(/[^a-z0-9]+/g, "-")
-              .replace(/-+$/, ""),
-          }
-        : {}),
+          ...(!isEdit
+            ? {
+                id: `${vendorId}-${name
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/-+$/, "")}`,
+              }
+            : {}),
     }));
   };
 
@@ -53,12 +59,49 @@ export function ProductFormModal({
     }
   };
 
+  const addVariant = () => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: [
+        ...prev.variants,
+        { id: `var-${Date.now()}`, name: "", price: 0 },
+      ],
+    }));
+  };
+
+  const updateVariant = (index: number, field: keyof ProductVariant, value: string | number) => {
+    setFormData((prev) => {
+      const newVariants = [...prev.variants];
+      newVariants[index] = { ...newVariants[index], [field]: value };
+      return { ...prev, variants: newVariants };
+    });
+  };
+
+  const removeVariant = (index: number) => {
+    setFormData((prev) => {
+      const newVariants = [...prev.variants];
+      newVariants.splice(index, 1);
+      return { ...prev, variants: newVariants };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
 
     try {
+      // Validation for variants
+      if (formData.hasVariants) {
+        if (formData.variants.length === 0) {
+          throw new Error("Please add at least one variant.");
+        }
+        for (const v of formData.variants) {
+          if (!v.name.trim()) throw new Error("All variants must have a name.");
+          if (v.price < 0) throw new Error("Variant prices cannot be negative.");
+        }
+      }
+
       let imageUrl = (editData?.imageUrl as string) || "";
       if (file) {
         const formDataUpload = new FormData();
@@ -74,9 +117,15 @@ export function ProductFormModal({
         imageUrl = json.data?.imageUrl || json.imageUrl;
       }
 
+      // Determine the base price. If variants exist, base price is the lowest variant price.
+      let basePrice = Number(formData.price);
+      if (formData.hasVariants && formData.variants.length > 0) {
+        basePrice = Math.min(...formData.variants.map(v => Number(v.price)));
+      }
+
       const payload = {
         ...formData,
-        price: Number(formData.price),
+        price: basePrice,
         imageUrl,
       };
 
@@ -98,27 +147,12 @@ export function ProductFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-xl border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold">{isEdit ? "Edit Menu Item" : "Add Menu Item"}</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {isEdit
-                ? "Update the details for this item."
-                : "Add a new item to your stall's menu."}
-            </p>
-          </div>
-          <button onClick={onClose} className="rounded-full p-2 hover:bg-accent transition-colors">
-            <X className="h-4 w-4" />
-          </button>
+    <div>
+      {error && (
+        <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-medium text-destructive">
+          {error}
         </div>
-
-        {error && (
-          <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-medium text-destructive">
-            {error}
-          </div>
-        )}
+      )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-4">
@@ -138,42 +172,29 @@ export function ProductFormModal({
                 required
                 disabled={isEdit}
                 value={formData.id}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    id: e.target.value.toLowerCase().replace(/\s+/g, "-"),
-                  })
-                }
+                onChange={(e) => {
+                  let val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+                  if (!val.startsWith(`${vendorId}-`)) {
+                    val = `${vendorId}-${val.replace(vendorId, "").replace(/^-/, "")}`;
+                  }
+                  setFormData({ ...formData, id: val });
+                }}
                 className="w-full rounded-xl border border-input bg-muted px-4 py-2.5 text-sm transition-colors focus:outline-none disabled:opacity-70"
                 placeholder="auto-generated"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold">Price (₹)</label>
-              <input
-                required
-                type="number"
-                min="0"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="80"
-              />
-            </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold">Emoji</label>
-              <div className="relative">
-                <input
-                  required
-                  value={formData.emoji}
-                  onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
-                  className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-xl transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  placeholder="🥟"
-                />
-              </div>
+              <input
+                required
+                value={formData.emoji}
+                onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
+                className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-xl transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="🥟"
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold">Dietary</label>
@@ -187,6 +208,19 @@ export function ProductFormModal({
               </select>
             </div>
           </div>
+
+          <VariantManager
+            hasVariants={formData.hasVariants}
+            variantLabel={formData.variantLabel}
+            variants={formData.variants}
+            price={formData.price}
+            onChangeHasVariants={(val) => setFormData({ ...formData, hasVariants: val })}
+            onChangeVariantLabel={(val) => setFormData({ ...formData, variantLabel: val })}
+            onChangePrice={(val) => setFormData({ ...formData, price: val })}
+            onAddVariant={addVariant}
+            onUpdateVariant={updateVariant}
+            onRemoveVariant={removeVariant}
+          />
 
           <div className="space-y-2">
             <label className="text-sm font-semibold">
@@ -261,7 +295,6 @@ export function ProductFormModal({
             </button>
           </div>
         </form>
-      </div>
     </div>
   );
 }

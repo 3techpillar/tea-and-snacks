@@ -28,6 +28,7 @@ export async function getCatalog(): Promise<Catalog> {
       specialty: v.specialty,
       upiId: v.upiId,
       highlights: v.highlights ?? [],
+      imageUrl: v.imageUrl,
     })),
     products: productDocs.map((p) => ({
       id: p._id as unknown as string,
@@ -37,6 +38,11 @@ export async function getCatalog(): Promise<Catalog> {
       emoji: p.emoji,
       veg: p.veg,
       tag: p.tag ?? undefined,
+      imageUrl: p.imageUrl,
+      isAvailable: p.isAvailable,
+      hasVariants: p.hasVariants,
+      variantLabel: p.variantLabel,
+      variants: p.variants as ProductDTO["variants"],
     })),
     offers: offerDocs.map((o) => ({
       id: o._id as unknown as string,

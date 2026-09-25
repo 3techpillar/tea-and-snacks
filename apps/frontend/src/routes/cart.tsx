@@ -48,13 +48,13 @@ function CartPage() {
       <h1 className="text-3xl font-bold">Your cart</h1>
 
       <div className="mt-6 grid gap-3">
-        {detailed.map(({ product, qty }) => (
+        {detailed.map(({ product, variant, qty }) => (
           <div
-            key={product.id}
+            key={variant ? `${product.id}-${variant.id}` : product.id}
             className="surface-card flex items-center gap-4 p-4"
           >
             <img
-              src={productImage(product.id)}
+              src={product.imageUrl || productImage(product.id)}
               alt={product.name}
               loading="lazy"
               width={512}
@@ -63,15 +63,15 @@ function CartPage() {
             />
 
             <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{product.name}</p>
+              <p className="truncate font-semibold">{product.name} {variant ? `(${variant.name})` : ""}</p>
               <p className="text-sm text-muted-foreground">
-                {vendorById(product.vendorId)?.name} · ₹{product.price}
+                {vendorById(product.vendorId)?.name} · ₹{variant ? variant.price : product.price}
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-full bg-secondary p-1">
               <button
                 aria-label="Decrease quantity"
-                onClick={() => setQty(product.id, qty - 1)}
+                onClick={() => setQty(product.id, qty - 1, variant?.id)}
                 className="grid h-8 w-8 place-items-center rounded-full bg-card font-bold"
               >
                 −
@@ -81,14 +81,14 @@ function CartPage() {
               </span>
               <button
                 aria-label="Increase quantity"
-                onClick={() => setQty(product.id, qty + 1)}
+                onClick={() => setQty(product.id, qty + 1, variant?.id)}
                 className="grid h-8 w-8 place-items-center rounded-full bg-card font-bold"
               >
                 +
               </button>
             </div>
             <button
-              onClick={() => remove(product.id)}
+              onClick={() => remove(product.id, variant?.id)}
               className="text-sm font-medium text-muted-foreground hover:text-destructive"
             >
               Remove

@@ -9,6 +9,8 @@ export type OrderItemDoc = {
   productId?: string;
   vendorId?: string;
   name: string;
+  variantId?: string;
+  variantName?: string;
   emoji: string;
   qty: number;
   price: number;
@@ -40,6 +42,8 @@ const orderItemSchema = new Schema<OrderItemDoc>(
     productId: String,
     vendorId: String,
     name: { type: String, required: true },
+    variantId: String,
+    variantName: String,
     emoji: { type: String, required: true },
     qty: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true, min: 0 },

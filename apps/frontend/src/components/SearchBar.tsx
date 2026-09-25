@@ -109,8 +109,8 @@ export function SearchBar({
                       <img
                         src={
                           isProduct
-                            ? productImage(r.product.id)
-                            : vendorImage(r.vendor.id)
+                            ? (r.product.imageUrl || productImage(r.product.id))
+                            : (r.vendor.imageUrl || vendorImage(r.vendor.id))
                         }
                         alt=""
                         loading="lazy"

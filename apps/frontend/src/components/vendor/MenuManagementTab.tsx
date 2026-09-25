@@ -1,16 +1,13 @@
-import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil } from "lucide-react";
 import { vendorApi } from "@/lib/api/vendor";
 import { useCatalog } from "@/lib/catalog-client";
 import { InlinePrice } from "./MenuManagement/InlinePrice";
-import { ProductFormModal } from "./MenuManagement/ProductFormModal";
 
 export function MenuManagementTab({ vendorId }: { vendorId: string }) {
   const { products } = useCatalog();
   const queryClient = useQueryClient();
-  const [editingProduct, setEditingProduct] = useState<Record<string, unknown> | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const vendorProducts = products.filter((p) => p.vendorId === vendorId);
 
@@ -40,15 +37,13 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
             {vendorProducts.length} item{vendorProducts.length !== 1 ? "s" : ""} in your menu
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingProduct(null);
-            setIsAddModalOpen(true);
-          }}
+        <Link
+          to={`/vendor/${vendorId}/products/new`}
+          search={{ tab: "menu" }}
           className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" /> Add Item
-        </button>
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -78,13 +73,17 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
                     <div className="min-w-0">
                       <h3 className="truncate font-semibold text-foreground">{p.name}</h3>
                       <div className="mt-0.5 flex items-center gap-2">
-                        <InlinePrice
-                          price={p.price}
-                          onSave={(newPrice) =>
-                            priceMutation.mutate({ productId, price: newPrice })
-                          }
-                          isSaving={priceMutation.isPending}
-                        />
+                        {p.hasVariants ? (
+                          <span className="font-semibold text-sm text-foreground">Starts at ₹{p.price}</span>
+                        ) : (
+                          <InlinePrice
+                            price={p.price}
+                            onSave={(newPrice) =>
+                              priceMutation.mutate({ productId, price: newPrice })
+                            }
+                            isSaving={priceMutation.isPending}
+                          />
+                        )}
                         {p.veg !== undefined && (
                           <span
                             className={`inline-flex h-4 w-4 items-center justify-center rounded-sm border text-[9px] font-bold ${p.veg ? "border-green-600 text-green-600" : "border-red-600 text-red-600"}`}
@@ -93,6 +92,17 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
                           </span>
                         )}
                       </div>
+                      
+                      {p.hasVariants && p.variants && p.variants.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {p.variants.map(v => (
+                            <span key={v.id} className="inline-flex rounded-md bg-accent/50 px-2 py-0.5 text-[10px] font-medium text-accent-foreground border border-border">
+                              {v.name} (₹{v.price})
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       {p.tag && (
                         <span className="mt-1.5 inline-block rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium">
                           {p.tag}
@@ -132,15 +142,13 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
                     {p.isAvailable !== false ? "Available" : "Out of Stock"}
                   </span>
                   <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
-                        setEditingProduct(p as Record<string, unknown>);
-                        setIsAddModalOpen(true);
-                      }}
+                    <Link
+                      to={`/vendor/${vendorId}/products/${productId}/edit`}
+                      search={{ tab: "menu" }}
                       className="flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
                     >
                       <Pencil className="h-3 w-3" /> Edit
-                    </button>
+                    </Link>
                     <button
                       onClick={() => {
                         if (confirm(`Remove ${p.name} from your menu?`)) {
@@ -165,29 +173,16 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
             <p className="mt-1 text-sm text-muted-foreground">
               Add your first item to start receiving orders.
             </p>
-            <button
-              onClick={() => {
-                setEditingProduct(null);
-                setIsAddModalOpen(true);
-              }}
-              className="mt-4 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            <Link
+              to={`/vendor/${vendorId}/products/new`}
+              search={{ tab: "menu" }}
+              className="mt-4 inline-flex items-center rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <Plus className="mr-1 inline h-4 w-4" /> Add First Item
-            </button>
+            </Link>
           </div>
         )}
       </div>
-
-      {isAddModalOpen && (
-        <ProductFormModal
-          vendorId={vendorId}
-          editData={editingProduct}
-          onClose={() => {
-            setIsAddModalOpen(false);
-            setEditingProduct(null);
-          }}
-        />
-      )}
     </div>
   );
 }
