@@ -1,15 +1,16 @@
 import { apiClient } from "../api-client";
 import { type DemoOrder } from "../orders";
-import type { Vendor, PublicUser } from "@tea-and-snacks/shared";
+import type { Vendor, PublicUser, PaginatedResponse } from "@tea-and-snacks/shared";
 
 export const adminApi = {
-  // Orders
-  getOrders: () => apiClient.get<DemoOrder[]>("/api/admin/orders"),
+  getOrders: (page = 1, limit = 20, status = "Live") => 
+    apiClient.get<PaginatedResponse<DemoOrder>>(`/api/admin/orders?page=${page}&limit=${limit}&status=${status}`),
   cancelOrder: (orderId: string, reason?: string) =>
     apiClient.put<{ message: string; order: DemoOrder }>(`/api/admin/orders/${orderId}/cancel`, { reason }),
 
   // Vendors
-  getVendors: () => apiClient.get<Vendor[]>("/api/admin/vendors"),
+  getVendors: (page = 1, limit = 20) => 
+    apiClient.get<PaginatedResponse<Vendor>>(`/api/admin/vendors?page=${page}&limit=${limit}`),
   createVendor: (data: Partial<Vendor> & { ownerEmail?: string, ownerMobile?: string }) =>
     apiClient.post<{ message: string; requiresOtp?: boolean; email?: string; vendor?: Vendor; defaultAccount?: any }>("/api/admin/vendors", data),
   verifyVendorOtp: (data: { email: string, otp: string }) =>

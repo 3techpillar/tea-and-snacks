@@ -37,7 +37,7 @@ function CheckoutPage() {
     mutationFn: (input: {
       customerName: string;
       customerPhone: string;
-      items: { productId: string; qty: number }[];
+      items: { productId: string; variantId?: string; qty: number }[];
     }) => ordersApi.place(input),
     onSuccess: (order) => {
       clear();
@@ -91,12 +91,13 @@ function CheckoutPage() {
   }
 
   const vendorTotals = detailed.reduce(
-    (acc, { product, qty }) => {
+    (acc, { product, variant, qty }) => {
       const vendor = vendorById(product.vendorId);
       if (!vendor) return acc;
       const row = acc.find((a) => a.vendor.id === vendor.id);
-      if (row) row.amount += product.price * qty;
-      else acc.push({ vendor, amount: product.price * qty });
+      const price = variant ? variant.price : product.price;
+      if (row) row.amount += price * qty;
+      else acc.push({ vendor, amount: price * qty });
       return acc;
     },
     [] as {
@@ -116,8 +117,9 @@ function CheckoutPage() {
     placeOrder.mutate({
       customerName: user.name,
       customerPhone: phone.trim(),
-      items: detailed.map(({ product, qty }) => ({
+      items: detailed.map(({ product, variant, qty }) => ({
         productId: product.id,
+        variantId: variant?.id,
         qty,
       })),
     });

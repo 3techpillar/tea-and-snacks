@@ -15,4 +15,10 @@ export const ordersApi = {
 
   uploadProof: (orderId: string, data: { fileName: string; dataUrl: string }) =>
     apiClient.post<DemoOrder>(`/api/orders/${orderId}/proof`, data),
+
+  addChatMessage: (orderId: string, text: string) =>
+    apiClient.post<DemoOrder>(`/api/orders/${orderId}/chat`, { text }),
+
+  cancelOrder: (orderId: string, reason?: string) =>
+    apiClient.post<DemoOrder>(`/api/orders/${orderId}/cancel`, { reason }),
 };

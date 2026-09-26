@@ -24,10 +24,22 @@ export function toDemoOrder(o: OrderDoc): DemoOrder {
       productId: i.productId ?? undefined,
       vendorId: i.vendorId ?? undefined,
       name: i.name,
+      variantId: i.variantId ?? undefined,
+      variantName: i.variantName ?? undefined,
       emoji: i.emoji,
       qty: i.qty,
       price: i.price,
     })),
     total: o.total,
+    needsRebooking: o.needsRebooking,
+    adminNote: o.adminNote ?? undefined,
+    cancelledBy: o.cancelledBy ?? undefined,
+    cancellationReason: o.cancellationReason ?? undefined,
+    messages: o.messages.map((m) => ({
+      senderRole: m.senderRole,
+      senderName: m.senderName,
+      text: m.text,
+      timestamp: m.timestamp.toISOString(),
+    })),
   };
 }

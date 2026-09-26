@@ -95,20 +95,23 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
     const vendorId = req.params.vendorId as string;
     requireVendorAccess(req.user, vendorId);
     
-    const { id, name, price, emoji, veg, tag, imageUrl, isAvailable } = req.body;
+    const { id, name, price, emoji, veg, tag, imageUrl, isAvailable, hasVariants, variantLabel, variants } = req.body;
     if (!id || !name || price === undefined) {
       throw new ValidationError("ID, Name, and Price are required.");
     }
 
-    const existing = await Product.findById(id);
+    // Auto-generate backend-oriented ID using vendor stall ID to avoid collisions
+    const productId = id.startsWith(`${vendorId}-`) ? id : `${vendorId}-${id}`;
+
+    const existing = await Product.findById(productId);
     if (existing) {
-      throw new ValidationError("Product with this ID already exists.");
+      throw new ValidationError("Product with this ID already exists for this stall.");
     }
 
     const product = await Product.create({
-      _id: id,
+      _id: productId,
       vendorId,
-      name, price, emoji: emoji || "🍲", veg: veg ?? true, tag, imageUrl, isAvailable
+      name, price, emoji: emoji || "🍲", veg: veg ?? true, tag, imageUrl, isAvailable, hasVariants, variantLabel, variants
     });
 
     res.status(201).json(product);

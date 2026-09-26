@@ -12,8 +12,34 @@ export const AdminController = {
 
   async getAllOrders(req: Request, res: Response, next: NextFunction) {
     try {
-      const orders = await Order.find().sort({ createdAt: -1 }).limit(100);
-      res.json(orders);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+
+      const query: any = {};
+      const statusFilter = req.query.status as string;
+      if (statusFilter && statusFilter !== "All") {
+        if (statusFilter === "Live") {
+          query.status = { $nin: ["Completed", "Cancelled"] };
+        } else {
+          query.status = statusFilter;
+        }
+      }
+
+      const [orders, total] = await Promise.all([
+        Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Order.countDocuments(query)
+      ]);
+
+      res.json({
+        data: orders,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      });
     } catch (err) {
       next(err);
     }
@@ -48,8 +74,24 @@ export const AdminController = {
 
   async getAllVendors(req: Request, res: Response, next: NextFunction) {
     try {
-      const vendors = await Vendor.find().sort({ createdAt: -1 });
-      res.json(vendors);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+
+      const [vendors, total] = await Promise.all([
+        Vendor.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Vendor.countDocuments()
+      ]);
+
+      res.json({
+        data: vendors,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      });
     } catch (err) {
       next(err);
     }

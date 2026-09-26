@@ -6,6 +6,7 @@ export const orderStatuses: OrderStatus[] = [
   "Accepted",
   "Preparing",
   "Ready",
+  "Completed",
 ];
 
 /** Statuses a vendor can move an order through. */

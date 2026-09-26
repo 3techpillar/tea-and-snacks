@@ -7,20 +7,20 @@ import {
   type ReactNode,
 } from "react";
 import { useCatalog } from "./catalog-client";
-import type { Product } from "./data";
+import type { Product, ProductVariant } from "@tea-and-snacks/shared";
 
-export type CartLine = { productId: string; qty: number };
+export type CartLine = { productId: string; variantId?: string; qty: number };
 
 type CartContextValue = {
   lines: CartLine[];
-  add: (productId: string) => void;
-  remove: (productId: string) => void;
-  setQty: (productId: string, qty: number) => void;
+  add: (productId: string, variantId?: string) => void;
+  remove: (productId: string, variantId?: string) => void;
+  setQty: (productId: string, qty: number, variantId?: string) => void;
   clear: () => void;
   hydrated: boolean;
   count: number;
   total: number;
-  detailed: { product: Product; qty: number }[];
+  detailed: { product: Product; variant?: ProductVariant; qty: number }[];
 };
 
 const emptyCart: CartContextValue = {
@@ -50,6 +50,7 @@ function isCartLineArray(value: unknown): value is CartLine[] {
         l &&
         typeof l === "object" &&
         typeof (l as CartLine).productId === "string" &&
+        ((l as CartLine).variantId === undefined || typeof (l as CartLine).variantId === "string") &&
         typeof (l as CartLine).qty === "number" &&
         (l as CartLine).qty > 0,
     )
@@ -102,32 +103,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const detailed = lines
       .map((l) => {
         const product = products.find((p) => p.id === l.productId);
-        return product ? { product, qty: l.qty } : null;
+        if (!product) return null;
+        const variant = l.variantId ? product.variants?.find(v => v.id === l.variantId) : undefined;
+        return { product, variant, qty: l.qty };
       })
-      .filter(Boolean) as { product: Product; qty: number }[];
+      .filter(Boolean) as { product: Product; variant?: ProductVariant; qty: number }[];
 
     return {
       lines,
       hydrated,
       detailed,
       count: lines.reduce((s, l) => s + l.qty, 0),
-      total: detailed.reduce((s, d) => s + d.product.price * d.qty, 0),
-      add: (productId) =>
+      total: detailed.reduce((s, d) => s + (d.variant ? d.variant.price : d.product.price) * d.qty, 0),
+      add: (productId, variantId) =>
         setLines((prev) => {
-          const found = prev.find((l) => l.productId === productId);
+          const found = prev.find((l) => l.productId === productId && l.variantId === variantId);
           return found
             ? prev.map((l) =>
-                l.productId === productId ? { ...l, qty: l.qty + 1 } : l,
+                l.productId === productId && l.variantId === variantId ? { ...l, qty: l.qty + 1 } : l,
               )
-            : [...prev, { productId, qty: 1 }];
+            : [...prev, { productId, variantId, qty: 1 }];
         }),
-      remove: (productId) =>
-        setLines((prev) => prev.filter((l) => l.productId !== productId)),
-      setQty: (productId, qty) =>
+      remove: (productId, variantId) =>
+        setLines((prev) => prev.filter((l) => !(l.productId === productId && l.variantId === variantId))),
+      setQty: (productId, qty, variantId) =>
         setLines((prev) =>
           qty <= 0
-            ? prev.filter((l) => l.productId !== productId)
-            : prev.map((l) => (l.productId === productId ? { ...l, qty } : l)),
+            ? prev.filter((l) => !(l.productId === productId && l.variantId === variantId))
+            : prev.map((l) => (l.productId === productId && l.variantId === variantId ? { ...l, qty } : l)),
         ),
       clear: () => setLines([]),
     };

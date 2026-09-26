@@ -51,3 +51,25 @@ export async function uploadProof(req: Request, res: Response, next: NextFunctio
     next(err);
   }
 }
+
+export async function addChatMessage(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = requireUser(req.user);
+    const orderId = req.params.orderId as string;
+    const order = await ordersService.addChatMessage(orderId, req.body.text, user);
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function cancelOrder(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = requireUser(req.user);
+    const orderId = req.params.orderId as string;
+    const order = await ordersService.cancelOrder(orderId, req.body.reason, user);
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+}

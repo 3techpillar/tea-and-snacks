@@ -15,7 +15,7 @@ export function VendorCard({ vendor }: { vendor: Vendor }) {
     >
       <div className="relative aspect-[16/9] sm:aspect-[16/10] overflow-hidden">
         <img
-          src={vendorImage(vendor.id)}
+          src={vendor.imageUrl || vendorImage(vendor.id)}
           alt={`${vendor.name} — ${vendor.cuisine}`}
           loading="lazy"
           width={800}

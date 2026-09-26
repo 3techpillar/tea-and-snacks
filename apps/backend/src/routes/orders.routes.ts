@@ -29,9 +29,19 @@ const uploadProofSchema = z.object({
     ),
 });
 
+const chatSchema = z.object({
+  text: z.string().trim().min(1, "Message cannot be empty").max(1000),
+});
+
+const cancelSchema = z.object({
+  reason: z.string().trim().max(500).optional(),
+});
+
 router.post("/", validate(placeOrderSchema), ordersController.create);
 router.get("/", ordersController.list);
 router.get("/:orderId", ordersController.getById);
 router.post("/:orderId/proof", validate(uploadProofSchema), ordersController.uploadProof);
+router.post("/:orderId/chat", validate(chatSchema), ordersController.addChatMessage);
+router.post("/:orderId/cancel", validate(cancelSchema), ordersController.cancelOrder);
 
 export default router;

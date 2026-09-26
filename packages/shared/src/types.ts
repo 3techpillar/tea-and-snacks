@@ -2,6 +2,12 @@
 
 export type AccentColor = "mango" | "chili" | "mint" | "berry" | "sky" | "grape";
 
+export type ProductVariant = {
+  id: string;
+  name: string;
+  price: number;
+};
+
 export type Product = {
   id: string;
   vendorId: string;
@@ -12,6 +18,9 @@ export type Product = {
   tag?: string;
   imageUrl?: string;
   isAvailable?: boolean;
+  hasVariants?: boolean;
+  variants?: ProductVariant[];
+  variantLabel?: string;
 };
 
 export type Vendor = {
@@ -45,6 +54,16 @@ export type Catalog = {
   vendors: Vendor[];
   products: Product[];
   offers: Offer[];
+};
+
+export type PaginatedResponse<T> = {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 };
 
 // ── Auth types ─────────────────────────────────────────────────────
@@ -86,9 +105,18 @@ export type OrderItem = {
   productId?: string;
   vendorId?: string;
   name: string;
+  variantId?: string;
+  variantName?: string;
   emoji: string;
   qty: number;
   price: number;
+};
+
+export type OrderMessage = {
+  senderRole: "customer" | "vendor" | "admin";
+  senderName: string;
+  text: string;
+  timestamp: string;
 };
 
 export type DemoOrder = {
@@ -109,6 +137,9 @@ export type DemoOrder = {
   needsRebooking?: boolean;
   /** Shown to the customer when admin intervenes. */
   adminNote?: string;
+  messages: OrderMessage[];
+  cancelledBy?: "customer" | "vendor" | "admin";
+  cancellationReason?: string;
 };
 
 /** Richer view used only by the admin dashboard. */

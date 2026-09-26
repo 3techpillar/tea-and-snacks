@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 
 let socket: Socket | undefined;
@@ -38,4 +38,26 @@ export function useOrderRoomUpdates(
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room]);
+}
+
+export function useIsSocketConnected() {
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const s = getSocket();
+    setIsConnected(s.connected);
+    
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+
+    s.on("connect", onConnect);
+    s.on("disconnect", onDisconnect);
+
+    return () => {
+      s.off("connect", onConnect);
+      s.off("disconnect", onDisconnect);
+    };
+  }, []);
+
+  return isConnected;
 }

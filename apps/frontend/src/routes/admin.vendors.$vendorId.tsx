@@ -16,12 +16,12 @@ function EditVendorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: vendors, isLoading } = useQuery({
-    queryKey: ["admin-vendors"],
-    queryFn: adminApi.getVendors,
+  const { data: response, isLoading } = useQuery({
+    queryKey: ["admin-vendors-all"],
+    queryFn: () => adminApi.getVendors(1, 1000),
   });
 
-  const vendor = vendors?.find(v => (v.id || (v as any)._id) === vendorId);
+  const vendor = response?.data?.find(v => (v.id || (v as any)._id) === vendorId);
 
   const handleSubmit = async (data: any, file: File | null) => {
     setIsSubmitting(true);

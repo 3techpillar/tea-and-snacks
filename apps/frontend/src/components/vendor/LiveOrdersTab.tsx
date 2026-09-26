@@ -8,7 +8,8 @@ import {
   type DemoOrder,
   type OrderStatus,
 } from "@/lib/orders";
-import { useOrderRoomUpdates } from "@/lib/realtime-client";
+import { useOrderRoomUpdates, useIsSocketConnected } from "@/lib/realtime-client";
+import { OrderChat } from "@/components/OrderChat";
 
 const filters = ["Live", "Pending", "Preparing", "Ready", "All"] as const;
 type Filter = (typeof filters)[number];
@@ -40,6 +41,8 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Filter>("Live");
   const [proof, setProof] = useState<DemoOrder | null>(null);
+  const [chatOrderId, setChatOrderId] = useState<string | null>(null);
+  const isSocketConnected = useIsSocketConnected();
 
   const queryKey = ["vendor-orders", vendorId] as const;
 
@@ -47,7 +50,7 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
     queryKey,
     queryFn: () => vendorApi.getOrders(vendorId),
     enabled: hasAccess,
-    refetchInterval: 15_000,
+    refetchInterval: isSocketConnected ? false : 15_000,
   });
 
   useOrderRoomUpdates(hasAccess ? `vendor:${vendorId}` : undefined, () =>
@@ -80,6 +83,7 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
   });
 
   const orders = ordersQuery.data ?? EMPTY_ORDERS;
+  const chatOrder = chatOrderId ? orders.find((o) => o.id === chatOrderId) || null : null;
 
   const stats = useMemo(() => {
     const live = orders.filter((o) => o.status !== "Completed" && o.status !== "Cancelled");
@@ -160,18 +164,26 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
                       {o.phone} · {new Date(o.placedAt).toLocaleTimeString()}
                     </p>
                   </div>
-                  <span
-                    className={`ml-auto rounded-full px-3 py-1 text-xs font-bold ${statusToneClass[o.status]}`}
-                  >
-                    {o.status}
-                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      onClick={() => setChatOrderId(o.id)}
+                      className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary hover:bg-primary/20"
+                    >
+                      Chat
+                    </button>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-bold ${statusToneClass[o.status]}`}
+                    >
+                      {o.status}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="mt-3 space-y-1 text-sm">
                   {slice.items.map((i, idx) => (
-                    <div key={i.productId ?? `${i.name}-${idx}`} className="flex justify-between">
+                    <div key={i.variantId ? `${i.productId}-${i.variantId}` : i.productId ?? `${i.name}-${idx}`} className="flex justify-between">
                       <span className="text-muted-foreground">
-                        {i.qty} × {i.emoji} {i.name}
+                        {i.qty} × {i.emoji} {i.name} {i.variantName ? `(${i.variantName})` : ""}
                       </span>
                       <span className="font-semibold">₹{i.price * i.qty}</span>
                     </div>
@@ -275,6 +287,26 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
               className="mt-4 w-full rounded-full bg-primary px-4 py-2 font-semibold text-primary-foreground"
             >
               Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {chatOrder && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-foreground/70 p-4"
+          onClick={() => setChatOrderId(null)}
+        >
+          <div
+            className="w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <OrderChat order={chatOrder} isVendor onMessageSent={onMutationSuccess} />
+            <button
+              onClick={() => setChatOrderId(null)}
+              className="mt-4 w-full rounded-full bg-secondary px-4 py-3 font-semibold text-foreground hover:bg-secondary/80 transition-colors"
+            >
+              Close Chat
             </button>
           </div>
         </div>
