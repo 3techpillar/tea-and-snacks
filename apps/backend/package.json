@@ -6,11 +6,10 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "PORT=3015 node dist/index.js",
-    "build": "tsup src/index.ts --format esm --clean --no-external @tea-and-snacks/shared",
+    "build": "tsup src/index.ts --format esm --clean",
     "seed": "tsx src/seed/seed.ts"
   },
   "dependencies": {
-    "@tea-and-snacks/shared": "*",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -25,6 +24,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@tea-and-snacks/shared": "*",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
