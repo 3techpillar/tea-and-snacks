@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "PORT=3015 node dist/index.js",
-    "build": "tsup src/index.ts --format esm --clean",
+    "build": "tsup src/index.ts --format esm --clean --no-external @tea-and-snacks/shared",
     "seed": "tsx src/seed/seed.ts"
   },
   "dependencies": {
