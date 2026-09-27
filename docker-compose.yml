@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: tea-snacks-mongo
+    restart: unless-stopped
+    ports:
+      # Expose only to localhost for security, if you want direct access
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: tea-snacks-backend
+    restart: unless-stopped
+    ports:
+      # Binds the container's 3015 to the host's 127.0.0.1:3015
+      - "127.0.0.1:3015:3015"
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: tea-snacks-frontend
+    restart: unless-stopped
+    ports:
+      # Expose only to localhost (port 3016) for Nginx reverse proxy
+      - "127.0.0.1:3016:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
