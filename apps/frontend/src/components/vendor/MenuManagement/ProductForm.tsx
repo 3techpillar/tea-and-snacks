@@ -24,7 +24,8 @@ export function ProductForm({
     emoji: (editData?.emoji as string) || "🍲",
     veg: (editData?.veg as boolean) ?? true,
     tag: (editData?.tag as string) || "",
-    isAvailable: (editData?.isAvailable as boolean) ?? true,
+    status: (editData?.status as string) || "available",
+    prepTime: (editData?.prepTime as number | null) ?? null,
     hasVariants: (editData?.hasVariants as boolean) ?? false,
     variantLabel: (editData?.variantLabel as string) || "Options",
     variants: (editData?.variants as ProductVariant[]) || [],
@@ -207,6 +208,37 @@ export function ProductForm({
                 <option value="non-veg">Non-Veg</option>
               </select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="available">Available</option>
+              <option value="unavailable">Unavailable</option>
+              <option value="out_of_stock">Out of Stock</option>
+              <option value="coming_soon">Coming Soon</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Preparation Time</label>
+            <select
+              value={formData.prepTime === null ? "standard" : String(formData.prepTime)}
+              onChange={(e) => setFormData({ ...formData, prepTime: e.target.value === "standard" ? null : Number(e.target.value) })}
+              className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="standard">System Standard</option>
+              <option value="10">10 Minutes (⚡ Quick Delivery)</option>
+              <option value="20">20 Minutes</option>
+              <option value="30">30 Minutes</option>
+              <option value="45">45 Minutes</option>
+              <option value="60">60 Minutes</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">Items prepared in 10 minutes get a Quick Delivery badge.</p>
           </div>
 
           <VariantManager

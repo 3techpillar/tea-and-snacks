@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil } from "lucide-react";
 import { vendorApi } from "@/lib/api/vendor";
 import { useCatalog } from "@/lib/catalog-client";
+import type { Product } from "@tea-and-snacks/shared";
 import { InlinePrice } from "./MenuManagement/InlinePrice";
 
 export function MenuManagementTab({ vendorId }: { vendorId: string }) {
@@ -17,8 +18,8 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ productId, isAvailable }: { productId: string; isAvailable: boolean }) =>
-      vendorApi.updateProduct(vendorId, productId, { isAvailable }),
+    mutationFn: ({ productId, status }: { productId: string; status: Product["status"] }) =>
+      vendorApi.updateProduct(vendorId, productId, { status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["catalog"] }),
   });
 
@@ -111,36 +112,28 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
                     </div>
                   </div>
 
-                  {/* Availability toggle */}
-                  <button
-                    onClick={() =>
-                      toggleMutation.mutate({ productId, isAvailable: p.isAvailable === false })
-                    }
-                    disabled={toggleMutation.isPending}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
-                      p.isAvailable !== false ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"
-                    }`}
-                    title={p.isAvailable !== false ? "Mark as Out of Stock" : "Mark as Available"}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        p.isAvailable !== false ? "translate-x-5" : "translate-x-0"
+                  <div className="flex flex-col gap-2">
+                    <select
+                      value={p.status || (p.isAvailable !== false ? "available" : "unavailable")}
+                      onChange={(e) =>
+                        toggleMutation.mutate({ productId, status: e.target.value as Product["status"] })
+                      }
+                      disabled={toggleMutation.isPending}
+                      className={`rounded-md border border-border px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary ${
+                        p.status === "available" || p.isAvailable !== false ? "bg-mint-soft text-mint-ink" :
+                        "bg-destructive/10 text-destructive"
                       }`}
-                    />
-                  </button>
+                    >
+                      <option value="available">Available</option>
+                      <option value="out_of_stock">Out of Stock</option>
+                      <option value="unavailable">Unavailable</option>
+                      <option value="coming_soon">Coming Soon</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Actions row */}
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                      p.isAvailable !== false
-                        ? "bg-mint-soft text-mint-ink"
-                        : "bg-destructive/10 text-destructive"
-                    }`}
-                  >
-                    {p.isAvailable !== false ? "Available" : "Out of Stock"}
-                  </span>
+                <div className="mt-4 flex items-center justify-end border-t border-border pt-3">
                   <div className="flex items-center gap-3">
                     <Link
                       to={`/vendor/${vendorId}/products/${productId}/edit`}

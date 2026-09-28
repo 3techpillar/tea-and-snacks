@@ -29,9 +29,14 @@ export async function placeOrder(
   const byId = new Map(products.map((p) => [p._id as unknown as string, p]));
 
   const items = data.items.map(({ productId, variantId, qty }) => {
-    const product = byId.get(productId);
+    const product = byId.get(productId) as any;
     if (!product)
       throw new Error(`Product ${productId} is no longer available.`);
+
+    const isOrderable = product.status === "available" || (!product.status && product.isAvailable !== false);
+    if (!isOrderable) {
+      throw new Error(`Product "${product.name}" is currently unavailable for order.`);
+    }
 
     let price = product.price;
     let variantName: string | undefined = undefined;

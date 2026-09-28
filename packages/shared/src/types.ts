@@ -17,7 +17,10 @@ export type Product = {
   veg: boolean;
   tag?: string;
   imageUrl?: string;
-  isAvailable?: boolean;
+  isAvailable?: boolean; // Deprecated, use status instead
+  status?: "available" | "unavailable" | "out_of_stock" | "coming_soon";
+  prepTime?: number | null; // e.g. 10, 20, 30. null means system standard
+  isQuickDelivery?: boolean;
   hasVariants?: boolean;
   variants?: ProductVariant[];
   variantLabel?: string;
