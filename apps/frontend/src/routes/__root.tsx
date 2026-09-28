@@ -82,6 +82,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+import { useNotifications } from "@/hooks/useNotifications";
+
+function NotificationInitializer() {
+  useNotifications();
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { location } = useRouterState();
@@ -90,6 +97,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <NotificationInitializer />
         <CartProvider>
           {isAuthRoute ? (
             <div className="flex h-screen flex-col overflow-hidden bg-background">

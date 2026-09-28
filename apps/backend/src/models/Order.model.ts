@@ -33,6 +33,7 @@ export type OrderDoc = HydratedDocument<{
   items: OrderItemDoc[];
   total: number;
   paymentConfirmed: boolean;
+  paymentMethod?: "online" | "offline";
   paymentRejected: boolean;
   paymentProofName?: string;
   paymentProofUrl?: string;
@@ -81,14 +82,15 @@ const orderSchema = new Schema(
     status: {
       type: String,
       enum: [
-        "Pending",
+        "New",
         "Accepted",
         "Preparing",
-        "Ready",
-        "Completed",
+        "Out for Delivery",
+        "Delivered",
+        "Rejected",
         "Cancelled",
       ],
-      default: "Pending",
+      default: "New",
       required: true,
     },
     items: {
@@ -98,6 +100,7 @@ const orderSchema = new Schema(
     },
     total: { type: Number, required: true, min: 0 },
     paymentConfirmed: { type: Boolean, default: false },
+    paymentMethod: { type: String, enum: ["online", "offline"] },
     paymentRejected: { type: Boolean, default: false },
     paymentProofName: String,
     paymentProofUrl: String,

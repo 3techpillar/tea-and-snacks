@@ -12,7 +12,14 @@ const productSchema = new Schema(
     tag: { type: String },
     imageUrl: { type: String },
     isActive: { type: Boolean, default: true },
-    isAvailable: { type: Boolean, default: true },
+    isAvailable: { type: Boolean, default: true }, // Deprecated
+    status: {
+      type: String,
+      enum: ["available", "unavailable", "out_of_stock", "coming_soon"],
+      default: "available",
+    },
+    prepTime: { type: Number, default: null }, // e.g. 10, 20, 30. null means standard.
+    isQuickDelivery: { type: Boolean, default: false },
     hasVariants: { type: Boolean, default: false },
     variantLabel: { type: String },
     variants: [

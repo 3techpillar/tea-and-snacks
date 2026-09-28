@@ -16,6 +16,7 @@ export function toDemoOrder(o: OrderDoc): DemoOrder {
     status: o.status,
     placedAt: o.placedAt.toISOString(),
     paymentConfirmed: o.paymentConfirmed,
+    paymentMethod: o.paymentMethod ?? undefined,
     paymentRejected: o.paymentRejected,
     vendorNote: o.vendorNote ?? undefined,
     paymentProofName: o.paymentProofName ?? undefined,

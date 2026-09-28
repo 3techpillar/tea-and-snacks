@@ -22,6 +22,7 @@ services:
       - .env
     volumes:
       - backend_uploads:/app/public/uploads
+      - ./apps/backend/service-account.json:/app/service-account.json
     depends_on:
       - mongodb
 

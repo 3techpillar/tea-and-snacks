@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ProductCard } from "@/components/ProductCard";
+import { VendorMenuCard } from "@/components/VendorMenuCard";
 import { useCart } from "@/lib/cart";
 import { useState } from "react";
 import { accentClass, accentSoftClass, vendorById } from "@/lib/data";
@@ -165,9 +165,9 @@ function VendorMenu() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => (
-          <ProductCard key={item.id} product={item} />
+          <VendorMenuCard key={item.id} product={item} />
         ))}
       </div>
 

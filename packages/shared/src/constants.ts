@@ -2,20 +2,21 @@ import type { OrderStatus, DemoOrder } from "./types";
 
 /** Progress track shown to the customer. */
 export const orderStatuses: OrderStatus[] = [
-  "Pending",
+  "New",
   "Accepted",
   "Preparing",
-  "Ready",
-  "Completed",
+  "Out for Delivery",
+  "Delivered",
 ];
 
 /** Statuses a vendor can move an order through. */
 export const vendorStatuses: OrderStatus[] = [
-  "Pending",
+  "New",
   "Accepted",
   "Preparing",
-  "Ready",
-  "Completed",
+  "Out for Delivery",
+  "Delivered",
+  "Rejected",
   "Cancelled",
 ];
 
@@ -27,11 +28,12 @@ export const DELAY_THRESHOLD_MINUTES = 10;
  * straight to Completed without ever confirming payment.
  */
 export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  Pending: ["Accepted", "Cancelled"],
+  New: ["Accepted", "Rejected", "Cancelled"],
   Accepted: ["Preparing", "Cancelled"],
-  Preparing: ["Ready", "Cancelled"],
-  Ready: ["Completed", "Cancelled"],
-  Completed: [],
+  Preparing: ["Out for Delivery", "Cancelled"],
+  "Out for Delivery": ["Delivered", "Cancelled"],
+  Delivered: [],
+  Rejected: [],
   Cancelled: [],
 };
 

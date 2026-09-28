@@ -74,7 +74,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const logoutMutation = useMutation({
-    mutationFn: () => authApi.logout(),
+    mutationFn: async () => {
+      const deviceId = localStorage.getItem("fcm_device_id");
+      if (deviceId) {
+        try {
+          const API_BASE = import.meta.env.VITE_API_URL ?? "";
+          await fetch(`${API_BASE}/api/users/fcm-token/${deviceId}`, { 
+            method: "DELETE" 
+          });
+        } catch (e) {
+          console.error("Failed to unregister FCM token", e);
+        }
+      }
+      return authApi.logout();
+    },
     onSuccess: () => {
       queryClient.setQueryData(AUTH_QUERY_KEY, null);
       queryClient.clear();

@@ -17,7 +17,10 @@ export type Product = {
   veg: boolean;
   tag?: string;
   imageUrl?: string;
-  isAvailable?: boolean;
+  isAvailable?: boolean; // Deprecated, use status instead
+  status?: "available" | "unavailable" | "out_of_stock" | "coming_soon";
+  prepTime?: number | null; // e.g. 10, 20, 30. null means system standard
+  isQuickDelivery?: boolean;
   hasVariants?: boolean;
   variants?: ProductVariant[];
   variantLabel?: string;
@@ -80,6 +83,11 @@ export type PublicUser = {
   isActive: boolean;
 };
 
+export type AdminUserView = PublicUser & {
+  createdAt: string;
+  isVerified: boolean;
+};
+
 /** Returned by login / register / refresh endpoints. */
 export type AuthResponse = {
   user: PublicUser;
@@ -94,11 +102,12 @@ export type TokenPair = {
 // ── Order types ────────────────────────────────────────────────────
 
 export type OrderStatus =
-  | "Pending"
+  | "New"
   | "Accepted"
   | "Preparing"
-  | "Ready"
-  | "Completed"
+  | "Out for Delivery"
+  | "Delivered"
+  | "Rejected"
   | "Cancelled";
 
 export type OrderItem = {
@@ -127,6 +136,7 @@ export type DemoOrder = {
   status: OrderStatus;
   placedAt: string;
   paymentConfirmed: boolean;
+  paymentMethod?: "online" | "offline";
   paymentRejected?: boolean;
   vendorNote?: string;
   paymentProofName?: string;

@@ -11,11 +11,12 @@ router.use(authMiddleware);
 
 const updateStatusSchema = z.object({
   status: z.enum([
-    "Pending",
+    "New",
     "Accepted",
     "Preparing",
-    "Ready",
-    "Completed",
+    "Out for Delivery",
+    "Delivered",
+    "Rejected",
     "Cancelled",
   ]),
 });

@@ -95,7 +95,7 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
     const vendorId = req.params.vendorId as string;
     requireVendorAccess(req.user, vendorId);
     
-    const { id, name, price, emoji, veg, tag, imageUrl, isAvailable, hasVariants, variantLabel, variants } = req.body;
+    const { id, name, price, emoji, veg, tag, imageUrl, isAvailable, status, prepTime, hasVariants, variantLabel, variants } = req.body;
     if (!id || !name || price === undefined) {
       throw new ValidationError("ID, Name, and Price are required.");
     }
@@ -108,10 +108,12 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
       throw new ValidationError("Product with this ID already exists for this stall.");
     }
 
+    const isQuickDelivery = prepTime === 10;
+
     const product = await Product.create({
       _id: productId,
       vendorId,
-      name, price, emoji: emoji || "🍲", veg: veg ?? true, tag, imageUrl, isAvailable, hasVariants, variantLabel, variants
+      name, price, emoji: emoji || "🍲", veg: veg ?? true, tag, imageUrl, isAvailable, status, prepTime, isQuickDelivery, hasVariants, variantLabel, variants
     });
 
     res.status(201).json(product);
@@ -129,6 +131,10 @@ export async function updateProduct(req: Request, res: Response, next: NextFunct
     const product = await Product.findOne({ _id: productId, vendorId });
     if (!product) {
       throw new NotFoundError("Product not found or doesn't belong to your stall.");
+    }
+
+    if (req.body.prepTime !== undefined) {
+      req.body.isQuickDelivery = req.body.prepTime === 10;
     }
 
     const updated = await Product.findByIdAndUpdate(productId, req.body, { new: true });

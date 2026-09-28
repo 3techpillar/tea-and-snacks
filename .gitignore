@@ -12,7 +12,7 @@ dist
 dist-ssr
 .output
 .vinxi
-.tanstack/**
+.tanstack/
 .nitro
 *.local
 
@@ -33,3 +33,5 @@ dist-ssr
 *.env
 .env
 !.env.example
+*firebase-adminsdk*.json
+*service-account*.json

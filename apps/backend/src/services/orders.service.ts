@@ -5,12 +5,14 @@ import { nextOrderNumber } from "../models/Counter.model";
 import { emitOrderUpdated } from "../realtime/socket";
 import { toDemoOrder } from "../utils/orderMapper.util";
 import type { PublicUser, DemoOrder } from "@tea-and-snacks/shared";
+import { sendToVendor, sendToAdmins, sendToUser } from "./notification.service";
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024; // 5MB
 
 export type PlaceOrderInput = {
   customerName: string;
   customerPhone: string;
+  paymentMethod: "online" | "offline";
   items: { productId: string; variantId?: string; qty: number }[];
 };
 
@@ -28,9 +30,14 @@ export async function placeOrder(
   const byId = new Map(products.map((p) => [p._id as unknown as string, p]));
 
   const items = data.items.map(({ productId, variantId, qty }) => {
-    const product = byId.get(productId);
+    const product = byId.get(productId) as any;
     if (!product)
       throw new Error(`Product ${productId} is no longer available.`);
+
+    const isOrderable = product.status === "available" || (!product.status && product.isAvailable !== false);
+    if (!isOrderable) {
+      throw new Error(`Product "${product.name}" is currently unavailable for order.`);
+    }
 
     let price = product.price;
     let variantName: string | undefined = undefined;
@@ -63,8 +70,24 @@ export async function placeOrder(
     userId: user.id,
     customerName: data.customerName,
     customerPhone: data.customerPhone,
+    paymentMethod: data.paymentMethod,
     items,
     total,
+  });
+
+  // Notify vendors involved in this order
+  const uniqueVendorIds = [...new Set(items.map(i => i.vendorId).filter(Boolean))] as string[];
+  for (const vId of uniqueVendorIds) {
+    await sendToVendor(vId, {
+      title: "New Order Received!",
+      body: `Order #${order.displayId} from ${data.customerName} for ₹${total}`,
+    });
+  }
+
+  // Notify admins
+  await sendToAdmins({
+    title: "New Order Placed",
+    body: `Order #${order.displayId} for ₹${total} (Vendor: ${uniqueVendorIds.join(", ")})`,
   });
 
   return toDemoOrder(order);
@@ -118,6 +141,7 @@ export async function uploadPaymentProof(
   order.paymentProofName = data.fileName;
   order.paymentProofUrl = data.dataUrl;
   order.paymentRejected = false;
+  // Note: We no longer auto-confirm on upload. Vendor must manually confirm.
   await order.save();
 
   const demoOrder = toDemoOrder(order);
@@ -166,12 +190,12 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
   
   checkOrderAccess(order, user);
 
-  if (order.status === "Cancelled" || order.status === "Completed") {
+  if (order.status === "Cancelled" || order.status === "Delivered" || order.status === "Rejected") {
     throw new Error(`Order is already ${order.status}`);
   }
 
-  if (user.role === "customer" && order.status !== "Pending") {
-    throw new Error("Customers can only cancel orders when they are Pending.");
+  if (user.role === "customer" && order.status !== "New") {
+    throw new Error("Customers can only cancel orders when they are New.");
   }
 
   order.status = "Cancelled";
@@ -182,6 +206,24 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
   }
 
   await order.save();
+
+  // Notify parties
+  if (user.role === "customer") {
+    // Notify vendor
+    const uniqueVendorIds = [...new Set(order.items.map((i: any) => i.vendorId).filter(Boolean))] as string[];
+    for (const vId of uniqueVendorIds) {
+      await sendToVendor(vId, {
+        title: "Order Cancelled",
+        body: `Order #${order.displayId} was cancelled by the customer.`,
+      });
+    }
+  } else {
+    // Notify user
+    await sendToUser(String(order.userId), {
+      title: "Order Cancelled",
+      body: `Your order #${order.displayId} was cancelled by the ${user.role}.`,
+    });
+  }
 
   const demoOrder = toDemoOrder(order);
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });

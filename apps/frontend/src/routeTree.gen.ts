@@ -20,12 +20,14 @@ import { Route as RegisterRouteImport } from "./routes/register"
 import { Route as SearchRouteImport } from "./routes/search"
 import { Route as AdminIndexRouteImport } from "./routes/admin.index"
 import { Route as AdminOrdersRouteImport } from "./routes/admin.orders"
+import { Route as AdminUsersRouteImport } from "./routes/admin.users"
 import { Route as OrdersIndexRouteImport } from "./routes/orders.index"
 import { Route as OrdersOrderIdRouteImport } from "./routes/orders.$orderId"
 import { Route as VendorIndexRouteImport } from "./routes/vendor.index"
 import { Route as VendorVendorIdRouteImport } from "./routes/vendor.$vendorId"
 import { Route as VendorsIndexRouteImport } from "./routes/vendors.index"
 import { Route as VendorsVendorIdRouteImport } from "./routes/vendors.$vendorId"
+import { Route as AdminUsersUserIdRouteImport } from "./routes/admin.users_.$userId"
 import { Route as AdminVendorsIndexRouteImport } from "./routes/admin.vendors.index"
 import { Route as AdminVendorsVendorIdRouteImport } from "./routes/admin.vendors.$vendorId"
 import { Route as AdminVendorsCreateRouteImport } from "./routes/admin.vendors.create"
@@ -87,6 +89,11 @@ const AdminOrdersRoute = AdminOrdersRouteImport.update({
   path: "/orders",
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: "/users",
+  path: "/users",
+  getParentRoute: () => AdminRoute,
+} as any)
 const OrdersIndexRoute = OrdersIndexRouteImport.update({
   id: "/orders/",
   path: "/orders/",
@@ -116,6 +123,11 @@ const VendorsVendorIdRoute = VendorsVendorIdRouteImport.update({
   id: "/vendors/$vendorId",
   path: "/vendors/$vendorId",
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersUserIdRoute = AdminUsersUserIdRouteImport.update({
+  id: "/users_/$userId",
+  path: "/users/$userId",
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminVendorsIndexRoute = AdminVendorsIndexRouteImport.update({
   id: "/vendors/",
@@ -156,6 +168,7 @@ export interface FileRoutesByFullPath {
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
   "/admin/orders": typeof AdminOrdersRoute
+  "/admin/users": typeof AdminUsersRoute
   "/orders/$orderId": typeof OrdersOrderIdRoute
   "/vendor/$vendorId": typeof VendorVendorIdRouteWithChildren
   "/vendors/$vendorId": typeof VendorsVendorIdRoute
@@ -163,6 +176,7 @@ export interface FileRoutesByFullPath {
   "/orders/": typeof OrdersIndexRoute
   "/vendor/": typeof VendorIndexRoute
   "/vendors/": typeof VendorsIndexRoute
+  "/admin/users/$userId": typeof AdminUsersUserIdRoute
   "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
   "/admin/vendors/create": typeof AdminVendorsCreateRoute
   "/admin/vendors/": typeof AdminVendorsIndexRoute
@@ -179,6 +193,7 @@ export interface FileRoutesByTo {
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
   "/admin/orders": typeof AdminOrdersRoute
+  "/admin/users": typeof AdminUsersRoute
   "/orders/$orderId": typeof OrdersOrderIdRoute
   "/vendor/$vendorId": typeof VendorVendorIdRouteWithChildren
   "/vendors/$vendorId": typeof VendorsVendorIdRoute
@@ -186,6 +201,7 @@ export interface FileRoutesByTo {
   "/orders": typeof OrdersIndexRoute
   "/vendor": typeof VendorIndexRoute
   "/vendors": typeof VendorsIndexRoute
+  "/admin/users/$userId": typeof AdminUsersUserIdRoute
   "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
   "/admin/vendors/create": typeof AdminVendorsCreateRoute
   "/admin/vendors": typeof AdminVendorsIndexRoute
@@ -204,6 +220,7 @@ export interface FileRoutesById {
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
   "/admin/orders": typeof AdminOrdersRoute
+  "/admin/users": typeof AdminUsersRoute
   "/orders/$orderId": typeof OrdersOrderIdRoute
   "/vendor/$vendorId": typeof VendorVendorIdRouteWithChildren
   "/vendors/$vendorId": typeof VendorsVendorIdRoute
@@ -211,6 +228,7 @@ export interface FileRoutesById {
   "/orders/": typeof OrdersIndexRoute
   "/vendor/": typeof VendorIndexRoute
   "/vendors/": typeof VendorsIndexRoute
+  "/admin/users_/$userId": typeof AdminUsersUserIdRoute
   "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
   "/admin/vendors/create": typeof AdminVendorsCreateRoute
   "/admin/vendors/": typeof AdminVendorsIndexRoute
@@ -230,6 +248,7 @@ export interface FileRouteTypes {
     | "/register"
     | "/search"
     | "/admin/orders"
+    | "/admin/users"
     | "/orders/$orderId"
     | "/vendor/$vendorId"
     | "/vendors/$vendorId"
@@ -237,6 +256,7 @@ export interface FileRouteTypes {
     | "/orders/"
     | "/vendor/"
     | "/vendors/"
+    | "/admin/users/$userId"
     | "/admin/vendors/$vendorId"
     | "/admin/vendors/create"
     | "/admin/vendors/"
@@ -253,6 +273,7 @@ export interface FileRouteTypes {
     | "/register"
     | "/search"
     | "/admin/orders"
+    | "/admin/users"
     | "/orders/$orderId"
     | "/vendor/$vendorId"
     | "/vendors/$vendorId"
@@ -260,6 +281,7 @@ export interface FileRouteTypes {
     | "/orders"
     | "/vendor"
     | "/vendors"
+    | "/admin/users/$userId"
     | "/admin/vendors/$vendorId"
     | "/admin/vendors/create"
     | "/admin/vendors"
@@ -277,6 +299,7 @@ export interface FileRouteTypes {
     | "/register"
     | "/search"
     | "/admin/orders"
+    | "/admin/users"
     | "/orders/$orderId"
     | "/vendor/$vendorId"
     | "/vendors/$vendorId"
@@ -284,6 +307,7 @@ export interface FileRouteTypes {
     | "/orders/"
     | "/vendor/"
     | "/vendors/"
+    | "/admin/users_/$userId"
     | "/admin/vendors/$vendorId"
     | "/admin/vendors/create"
     | "/admin/vendors/"
@@ -388,6 +412,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AdminOrdersRouteImport
       parentRoute: typeof AdminRoute
     }
+    "/admin/users": {
+      id: "/admin/users"
+      path: "/users"
+      fullPath: "/admin/users"
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     "/orders/": {
       id: "/orders/"
       path: "/orders"
@@ -430,6 +461,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof VendorsVendorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/admin/users_/$userId": {
+      id: "/admin/users_/$userId"
+      path: "/users/$userId"
+      fullPath: "/admin/users/$userId"
+      preLoaderRoute: typeof AdminUsersUserIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     "/admin/vendors/": {
       id: "/admin/vendors/"
       path: "/vendors"
@@ -470,7 +508,9 @@ declare module "@tanstack/react-router" {
 
 interface AdminRouteChildren {
   AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminUsersUserIdRoute: typeof AdminUsersUserIdRoute
   AdminVendorsVendorIdRoute: typeof AdminVendorsVendorIdRoute
   AdminVendorsCreateRoute: typeof AdminVendorsCreateRoute
   AdminVendorsIndexRoute: typeof AdminVendorsIndexRoute
@@ -478,7 +518,9 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminOrdersRoute: AdminOrdersRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminUsersUserIdRoute: AdminUsersUserIdRoute,
   AdminVendorsVendorIdRoute: AdminVendorsVendorIdRoute,
   AdminVendorsCreateRoute: AdminVendorsCreateRoute,
   AdminVendorsIndexRoute: AdminVendorsIndexRoute,

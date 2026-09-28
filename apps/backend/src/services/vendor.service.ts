@@ -4,6 +4,7 @@ import { emitOrderUpdated } from "../realtime/socket";
 import { toDemoOrder } from "../utils/orderMapper.util";
 import { vendorSlice, ALLOWED_TRANSITIONS } from "@tea-and-snacks/shared";
 import type { DemoOrder } from "@tea-and-snacks/shared";
+import { sendToUser } from "./notification.service";
 
 /** Loads the order and 403s unless it actually contains an item for this vendor. */
 async function loadOrderForVendor(orderId: string, vendorId: string) {
@@ -37,14 +38,14 @@ export async function getVendorStats(vendorId: string) {
   const orders = await Order.find({ "items.vendorId": vendorId });
   const demoOrders = orders.map(toDemoOrder);
   const live = demoOrders.filter(
-    (o) => o.status !== "Completed" && o.status !== "Cancelled",
+    (o) => o.status !== "Delivered" && o.status !== "Cancelled" && o.status !== "Rejected",
   );
   const earned = demoOrders
     .filter((o) => o.paymentConfirmed && o.status !== "Cancelled")
     .reduce((s, o) => s + vendorSlice(o, vendorId).subtotal, 0);
   return {
     live: live.length,
-    pending: demoOrders.filter((o) => o.status === "Pending").length,
+    pending: demoOrders.filter((o) => o.status === "New").length,
     awaitingPay: demoOrders.filter(
       (o) => !o.paymentConfirmed && o.status !== "Cancelled",
     ).length,
@@ -66,12 +67,19 @@ export async function updateOrderStatus(
   ) {
     throw new Error(`Can't move an order from ${from} to ${status}.`);
   }
-  if (status === "Completed" && !order.paymentConfirmed) {
-    throw new Error("Confirm payment before marking the order Completed.");
+  if (status === "Delivered" && !order.paymentConfirmed) {
+    throw new Error("Confirm payment before marking the order Delivered.");
   }
 
   order.status = status;
   await order.save();
+
+  // Notify the customer
+  await sendToUser(String(order.userId), {
+    title: `Order ${status}`,
+    body: `Your order #${order.displayId} is now ${status}.`,
+  });
+
   return broadcast(order);
 }
 

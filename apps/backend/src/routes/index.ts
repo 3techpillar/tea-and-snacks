@@ -6,6 +6,7 @@ import ordersRoutes from "./orders.routes";
 import vendorRoutes from "./vendor.routes";
 import adminRoutes from "./admin.routes";
 import uploadRoutes from "./upload.routes";
+import userRoutes from "./user.routes";
 
 const router = Router();
 
@@ -13,6 +14,7 @@ const router = Router();
 router.use(apiLimiter);
 
 router.use("/auth", authRoutes);
+router.use("/users", userRoutes);
 router.use("/catalog", catalogRoutes);
 router.use("/orders", ordersRoutes);
 router.use("/vendor", vendorRoutes);
