@@ -18,6 +18,7 @@ export type UserDoc = HydratedDocument<{
   otpExpiresAt?: Date;
   lastLoginAt?: Date;
   refreshTokenHash?: string;
+  fcmDevices?: { token: string; deviceId: string; lastActive: Date }[];
 }>;
 
 const userSchema = new Schema(
@@ -46,6 +47,13 @@ const userSchema = new Schema(
     otpExpiresAt: { type: Date },
     lastLoginAt: { type: Date },
     refreshTokenHash: { type: String },
+    fcmDevices: [
+      {
+        token: { type: String, required: true },
+        deviceId: { type: String, required: true },
+        lastActive: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true },
 );

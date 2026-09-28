@@ -4,6 +4,7 @@ import { emitOrderUpdated } from "../realtime/socket";
 import { toDemoOrder } from "../utils/orderMapper.util";
 import { vendorSlice, ALLOWED_TRANSITIONS } from "@tea-and-snacks/shared";
 import type { DemoOrder } from "@tea-and-snacks/shared";
+import { sendToUser } from "./notification.service";
 
 /** Loads the order and 403s unless it actually contains an item for this vendor. */
 async function loadOrderForVendor(orderId: string, vendorId: string) {
@@ -72,6 +73,13 @@ export async function updateOrderStatus(
 
   order.status = status;
   await order.save();
+
+  // Notify the customer
+  await sendToUser(String(order.userId), {
+    title: `Order ${status}`,
+    body: `Your order #${order.displayId} is now ${status}.`,
+  });
+
   return broadcast(order);
 }
 

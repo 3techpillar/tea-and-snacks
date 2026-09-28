@@ -5,6 +5,7 @@ import { nextOrderNumber } from "../models/Counter.model";
 import { emitOrderUpdated } from "../realtime/socket";
 import { toDemoOrder } from "../utils/orderMapper.util";
 import type { PublicUser, DemoOrder } from "@tea-and-snacks/shared";
+import { sendToVendor, sendToAdmins, sendToUser } from "./notification.service";
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -72,6 +73,21 @@ export async function placeOrder(
     paymentMethod: data.paymentMethod,
     items,
     total,
+  });
+
+  // Notify vendors involved in this order
+  const uniqueVendorIds = [...new Set(items.map(i => i.vendorId).filter(Boolean))] as string[];
+  for (const vId of uniqueVendorIds) {
+    await sendToVendor(vId, {
+      title: "New Order Received!",
+      body: `Order #${order.displayId} from ${data.customerName} for ₹${total}`,
+    });
+  }
+
+  // Notify admins
+  await sendToAdmins({
+    title: "New Order Placed",
+    body: `Order #${order.displayId} for ₹${total} (Vendor: ${uniqueVendorIds.join(", ")})`,
   });
 
   return toDemoOrder(order);
@@ -190,6 +206,24 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
   }
 
   await order.save();
+
+  // Notify parties
+  if (user.role === "customer") {
+    // Notify vendor
+    const uniqueVendorIds = [...new Set(order.items.map((i: any) => i.vendorId).filter(Boolean))] as string[];
+    for (const vId of uniqueVendorIds) {
+      await sendToVendor(vId, {
+        title: "Order Cancelled",
+        body: `Order #${order.displayId} was cancelled by the customer.`,
+      });
+    }
+  } else {
+    // Notify user
+    await sendToUser(String(order.userId), {
+      title: "Order Cancelled",
+      body: `Your order #${order.displayId} was cancelled by the ${user.role}.`,
+    });
+  }
 
   const demoOrder = toDemoOrder(order);
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
