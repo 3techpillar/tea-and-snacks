@@ -80,6 +80,11 @@ export type PublicUser = {
   isActive: boolean;
 };
 
+export type AdminUserView = PublicUser & {
+  createdAt: string;
+  isVerified: boolean;
+};
+
 /** Returned by login / register / refresh endpoints. */
 export type AuthResponse = {
   user: PublicUser;

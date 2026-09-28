@@ -26,4 +26,8 @@ router.post("/vendors/resend-otp", AdminController.resendVendorOtp);
 router.put("/vendors/:id", AdminController.updateVendor);
 router.delete("/vendors/:id", AdminController.deleteVendor);
 
+// Users
+router.get("/users", AdminController.getAllUsers);
+router.get("/users/:id", AdminController.getUser);
+
 export default router;

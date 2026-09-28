@@ -49,9 +49,9 @@ export const AdminController = {
     try {
       const { id } = req.params;
       const order = await Order.findById(id);
-      
+
       if (!order) throw new NotFoundError("Order not found");
-      
+
       if (order.status === "Delivered" || order.status === "Cancelled" || order.status === "Rejected") {
         throw new ValidationError(`Order is already ${order.status}`);
       }
@@ -59,11 +59,11 @@ export const AdminController = {
       order.status = "Cancelled";
       order.adminNote = req.body.reason || "Cancelled by admin due to vendor unresponsiveness.";
       order.needsRebooking = true;
-      
+
       await order.save();
-      
+
       // TODO: Emit socket event to vendor and customer here!
-      
+
       res.json({ message: "Order forcefully cancelled", order });
     } catch (err) {
       next(err);
@@ -124,7 +124,7 @@ export const AdminController = {
       const passwordHash = await hashPassword("vendor123");
       const otp = generateOTP();
       const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      
+
       await User.create({
         name: `${name} Staff`,
         email: ownerEmail,
@@ -140,8 +140,8 @@ export const AdminController = {
 
       EmailService.send(ownerEmail, EmailTemplates.VerificationOTP(otp)).catch(console.error);
 
-      res.status(201).json({ 
-        message: "Vendor stall created. OTP sent for verification.", 
+      res.status(201).json({
+        message: "Vendor stall created. OTP sent for verification.",
         requiresOtp: true,
         email: ownerEmail,
         vendor
@@ -156,9 +156,9 @@ export const AdminController = {
       const { email, otp } = req.body;
       const user = await User.findOne({ email, role: "vendor" });
       if (!user) throw new NotFoundError("Vendor account not found");
-      
+
       if (user.isVerified) {
-        return res.json({ message: "Vendor already verified", defaultAccount: { email, password: "vendor123" }});
+        return res.json({ message: "Vendor already verified", defaultAccount: { email, password: "vendor123" } });
       }
 
       if (user.otpCode !== otp) throw new ValidationError("Invalid OTP");
@@ -196,7 +196,7 @@ export const AdminController = {
       EmailService.send(user.email, EmailTemplates.VerificationOTP(otp)).catch(console.error);
 
       res.json({ message: "OTP resent successfully" });
-    } catch(err) {
+    } catch (err) {
       next(err);
     }
   },
@@ -217,11 +217,76 @@ export const AdminController = {
       const { id } = req.params;
       const vendor = await Vendor.findByIdAndUpdate(id, { isActive: false }, { new: true });
       if (!vendor) throw new NotFoundError("Vendor not found");
-      
+
       // Deactivate all staff accounts for this vendor
       await User.updateMany({ vendorId: id }, { isActive: false });
-      
+
       res.json({ message: "Vendor deactivated successfully" });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // ── Users ──────────────────────────────────────────────────────────────
+
+  async getAllUsers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+
+      const query: any = {};
+      const roleFilter = req.query.role as string;
+      if (roleFilter && roleFilter !== "All") {
+        query.role = roleFilter.toLowerCase();
+      }
+
+      const search = req.query.search as string;
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ];
+      }
+
+      const [rawUsers, total] = await Promise.all([
+        User.find(query)
+          .select("-passwordHash -otpCode")
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        User.countDocuments(query)
+      ]);
+
+      const users = rawUsers.map((u: any) => {
+        const { _id, ...rest } = u;
+        return { id: _id.toString(), ...rest };
+      });
+
+      res.json({
+        data: users,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const user = await User.findById(id).select("-passwordHash -otpCode").lean();
+      
+      if (!user) throw new NotFoundError("User not found");
+      
+      const { _id, ...rest } = user as any;
+      res.json({ id: _id.toString(), ...rest });
     } catch (err) {
       next(err);
     }

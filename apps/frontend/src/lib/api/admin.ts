@@ -1,6 +1,6 @@
 import { apiClient } from "../api-client";
 import { type DemoOrder } from "../orders";
-import type { Vendor, PublicUser, PaginatedResponse } from "@tea-and-snacks/shared";
+import type { Vendor, AdminUserView, PaginatedResponse } from "@tea-and-snacks/shared";
 
 export const adminApi = {
   getOrders: (page = 1, limit = 20, status = "Live") => 
@@ -21,4 +21,10 @@ export const adminApi = {
     apiClient.put<{ message: string; vendor: Vendor }>(`/api/admin/vendors/${vendorId}`, data),
   deleteVendor: (vendorId: string) =>
     apiClient.delete<{ message: string }>(`/api/admin/vendors/${vendorId}`),
+
+  // Users
+  getUsers: (page = 1, limit = 20, search = "", role = "All") => 
+    apiClient.get<PaginatedResponse<AdminUserView>>(`/api/admin/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&role=${role}`),
+  getUser: (userId: string) =>
+    apiClient.get<AdminUserView>(`/api/admin/users/${userId}`),
 };

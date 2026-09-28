@@ -53,6 +53,13 @@ function AdminLayout() {
             <Store className="h-4 w-4" />
             Manage Vendors
           </Link>
+          <Link
+            to="/admin/users"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-primary [&.active]:text-primary-foreground"
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            Manage Users
+          </Link>
         </nav>
       </aside>
 
