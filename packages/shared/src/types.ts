@@ -94,11 +94,12 @@ export type TokenPair = {
 // ── Order types ────────────────────────────────────────────────────
 
 export type OrderStatus =
-  | "Pending"
+  | "New"
   | "Accepted"
   | "Preparing"
-  | "Ready"
-  | "Completed"
+  | "Out for Delivery"
+  | "Delivered"
+  | "Rejected"
   | "Cancelled";
 
 export type OrderItem = {
@@ -127,6 +128,7 @@ export type DemoOrder = {
   status: OrderStatus;
   placedAt: string;
   paymentConfirmed: boolean;
+  paymentMethod?: "online" | "offline";
   paymentRejected?: boolean;
   vendorNote?: string;
   paymentProofName?: string;

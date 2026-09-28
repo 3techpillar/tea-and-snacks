@@ -93,11 +93,11 @@ export function OrderChat({ order, isVendor = false, onMessageSent }: OrderChatP
           onChange={(e) => setText(e.target.value)}
           placeholder={isVendor ? "Message customer..." : "Message vendor..."}
           className="flex-1 rounded-full border border-input bg-transparent px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary pr-12"
-          disabled={sendMessage.isPending || order.status === "Cancelled" || order.status === "Completed"}
+          disabled={sendMessage.isPending || order.status === "Cancelled" || order.status === "Delivered"}
         />
         <button
           type="submit"
-          disabled={!text.trim() || sendMessage.isPending || order.status === "Cancelled" || order.status === "Completed"}
+          disabled={!text.trim() || sendMessage.isPending || order.status === "Cancelled" || order.status === "Delivered"}
           className="absolute right-1.5 top-1.5 bottom-1.5 aspect-square flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
           <Send className="h-4 w-4" />

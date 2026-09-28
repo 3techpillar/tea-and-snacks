@@ -31,12 +31,14 @@ function CheckoutPage() {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "offline">("online");
   const [error, setError] = useState("");
 
   const placeOrder = useMutation({
     mutationFn: (input: {
       customerName: string;
       customerPhone: string;
+      paymentMethod: "online" | "offline";
       items: { productId: string; variantId?: string; qty: number }[];
     }) => ordersApi.place(input),
     onSuccess: (order) => {
@@ -117,6 +119,7 @@ function CheckoutPage() {
     placeOrder.mutate({
       customerName: user.name,
       customerPhone: phone.trim(),
+      paymentMethod,
       items: detailed.map(({ product, variant, qty }) => ({
         productId: product.id,
         variantId: variant?.id,
@@ -150,24 +153,42 @@ function CheckoutPage() {
             />
           </div>
 
-          <div className="rounded-2xl bg-sky-soft p-4 text-sky-ink">
-            <p className="font-semibold">Scan &amp; pay ₹{total} by UPI</p>
-            <p className="mt-1 text-sm opacity-85">
-              Scan each stall's QR with any UPI app, then upload the payment
-              screenshot on the next screen.
-            </p>
+          <div>
+            <p className="text-sm font-semibold">Payment Method</p>
+            <div className="mt-2 flex gap-3">
+              <label className={`flex flex-1 cursor-pointer items-center justify-center rounded-xl border p-3 font-semibold transition-colors ${paymentMethod === "online" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-secondary"}`}>
+                <input type="radio" name="paymentMethod" className="hidden" checked={paymentMethod === "online"} onChange={() => setPaymentMethod("online")} />
+                Pay Online (UPI)
+              </label>
+              <label className={`flex flex-1 cursor-pointer items-center justify-center rounded-xl border p-3 font-semibold transition-colors ${paymentMethod === "offline" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-secondary"}`}>
+                <input type="radio" name="paymentMethod" className="hidden" checked={paymentMethod === "offline"} onChange={() => setPaymentMethod("offline")} />
+                Pay at Stall (Offline)
+              </label>
+            </div>
           </div>
 
-          <div className="grid gap-3">
-            {vendorTotals.map(({ vendor, amount }) => (
-              <UpiQr
-                key={vendor.id}
-                vendor={vendor}
-                amount={amount}
-                note={`Easy Food · ${vendor.name}`}
-              />
-            ))}
-          </div>
+          {paymentMethod === "online" && (
+            <>
+              <div className="rounded-2xl bg-sky-soft p-4 text-sky-ink">
+                <p className="font-semibold">Scan &amp; pay ₹{total} by UPI</p>
+                <p className="mt-1 text-sm opacity-85">
+                  Scan each stall's QR with any UPI app, then upload the payment
+                  screenshot on the next screen.
+                </p>
+              </div>
+
+              <div className="grid gap-3">
+                {vendorTotals.map(({ vendor, amount }) => (
+                  <UpiQr
+                    key={vendor.id}
+                    vendor={vendor}
+                    amount={amount}
+                    note={`Easy Food · ${vendor.name}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
           {error && (
             <p className="text-sm font-medium text-destructive">{error}</p>

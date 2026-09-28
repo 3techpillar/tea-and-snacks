@@ -13,7 +13,7 @@ function AdminOrdersDashboard() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
-  const [filter, setFilter] = useState<"All" | "Pending" | "Live" | "Completed" | "Cancelled">("Live");
+  const [filter, setFilter] = useState<"All" | "New" | "Live" | "Delivered" | "Cancelled">("Live");
 
   const queryKey = ["admin-orders", page, limit, filter];
   const { data, isLoading } = useQuery({
@@ -88,7 +88,7 @@ function AdminOrdersDashboard() {
       header: "Actions",
       cell: (o) => (
         <div className="flex gap-2">
-          {o.status !== "Completed" && o.status !== "Cancelled" && (
+          {o.status !== "Delivered" && o.status !== "Cancelled" && (
             <button
               onClick={() => {
                 if (confirm("Are you sure you want to FORCE CANCEL this order?")) {
@@ -113,7 +113,7 @@ function AdminOrdersDashboard() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {["Live", "Pending", "Completed", "Cancelled", "All"].map((f) => (
+        {["Live", "New", "Delivered", "Cancelled", "All"].map((f) => (
           <button
             key={f}
             onClick={() => {

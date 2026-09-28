@@ -11,6 +11,7 @@ const MAX_PROOF_BYTES = 5 * 1024 * 1024; // 5MB
 export type PlaceOrderInput = {
   customerName: string;
   customerPhone: string;
+  paymentMethod: "online" | "offline";
   items: { productId: string; variantId?: string; qty: number }[];
 };
 
@@ -63,6 +64,7 @@ export async function placeOrder(
     userId: user.id,
     customerName: data.customerName,
     customerPhone: data.customerPhone,
+    paymentMethod: data.paymentMethod,
     items,
     total,
   });
@@ -118,6 +120,7 @@ export async function uploadPaymentProof(
   order.paymentProofName = data.fileName;
   order.paymentProofUrl = data.dataUrl;
   order.paymentRejected = false;
+  // Note: We no longer auto-confirm on upload. Vendor must manually confirm.
   await order.save();
 
   const demoOrder = toDemoOrder(order);
@@ -166,12 +169,12 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
   
   checkOrderAccess(order, user);
 
-  if (order.status === "Cancelled" || order.status === "Completed") {
+  if (order.status === "Cancelled" || order.status === "Delivered" || order.status === "Rejected") {
     throw new Error(`Order is already ${order.status}`);
   }
 
-  if (user.role === "customer" && order.status !== "Pending") {
-    throw new Error("Customers can only cancel orders when they are Pending.");
+  if (user.role === "customer" && order.status !== "New") {
+    throw new Error("Customers can only cancel orders when they are New.");
   }
 
   order.status = "Cancelled";

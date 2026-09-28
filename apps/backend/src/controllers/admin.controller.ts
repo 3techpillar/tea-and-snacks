@@ -20,7 +20,7 @@ export const AdminController = {
       const statusFilter = req.query.status as string;
       if (statusFilter && statusFilter !== "All") {
         if (statusFilter === "Live") {
-          query.status = { $nin: ["Completed", "Cancelled"] };
+          query.status = { $nin: ["Delivered", "Cancelled", "Rejected"] };
         } else {
           query.status = statusFilter;
         }
@@ -52,7 +52,7 @@ export const AdminController = {
       
       if (!order) throw new NotFoundError("Order not found");
       
-      if (order.status === "Completed" || order.status === "Cancelled") {
+      if (order.status === "Delivered" || order.status === "Cancelled" || order.status === "Rejected") {
         throw new ValidationError(`Order is already ${order.status}`);
       }
 

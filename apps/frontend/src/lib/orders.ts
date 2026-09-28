@@ -18,10 +18,11 @@ export {
 import type { OrderStatus } from "@tea-and-snacks/shared";
 
 export const statusToneClass: Record<OrderStatus, string> = {
-  Pending: "bg-mango-soft text-mango-ink",
+  New: "bg-mango-soft text-mango-ink",
   Accepted: "bg-sky-soft text-sky-ink",
   Preparing: "bg-berry-soft text-berry-ink",
-  Ready: "bg-mint-soft text-mint-ink",
-  Completed: "bg-secondary text-foreground",
+  "Out for Delivery": "bg-mint-soft text-mint-ink",
+  Delivered: "bg-secondary text-foreground",
+  Rejected: "bg-chili-soft text-chili-ink",
   Cancelled: "bg-chili-soft text-chili-ink",
 };

@@ -17,15 +17,15 @@ export default defineConfig({
     // on the same origin (no CORS issues in dev)
     proxy: {
       "/api": {
-        target: "http://localhost:3001",
+        target: "http://localhost:3015",
         changeOrigin: true,
       },
       "/uploads": {
-        target: "http://localhost:3001",
+        target: "http://localhost:3015",
         changeOrigin: true,
       },
       "/socket.io": {
-        target: "http://localhost:3001",
+        target: "http://localhost:3015",
         ws: true,
       },
     },
