@@ -11,7 +11,6 @@ RUN npm ci
 # Copy code and build
 COPY packages/shared ./packages/shared
 COPY apps/frontend ./apps/frontend
-RUN npm run build:shared
 RUN npm run build:frontend
 
 # Serve with Nginx

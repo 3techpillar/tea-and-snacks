@@ -15,8 +15,7 @@ RUN npm ci
 COPY packages/shared ./packages/shared
 COPY apps/backend ./apps/backend
 
-# Build shared package then backend
-RUN npm run build:shared
+# Build backend
 RUN npm run build:backend
 
 # Production image
