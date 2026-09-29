@@ -13,6 +13,7 @@ import apiRoutes from "./routes/index";
 // ── Express app ────────────────────────────────────────────────────
 
 const app = express();
+app.set("trust proxy", 1); // Essential for rate limiting behind reverse proxies (Nginx/Docker)
 const httpServer = createServer(app);
 
 // ── Middleware ──────────────────────────────────────────────────────
