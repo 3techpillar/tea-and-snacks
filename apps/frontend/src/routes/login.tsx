@@ -10,6 +10,8 @@ import {
   AuthSubmitButton,
 } from "@/components/auth/AuthComponents";
 
+import { requestPushPermission } from "@/hooks/useNotifications";
+
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => ({
     redirect:
@@ -58,6 +60,10 @@ function LoginPage() {
     setSubmitting(true);
     try {
       const user = await login({ email: email.trim(), password });
+      
+      // Request and register push notifications (only prompts if default, or updates if already granted)
+      requestPushPermission().catch(console.error);
+
       if (user?.role === "admin") {
         navigate({ to: "/admin/orders" });
       } else if (user?.role === "vendor" && user.vendorId) {

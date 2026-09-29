@@ -5,6 +5,7 @@ import { authApi } from "@/lib/api/auth";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { OtpVerificationForm } from "@/components/auth/OtpVerificationForm";
+import { requestPushPermission } from "@/hooks/useNotifications";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -125,6 +126,10 @@ function RegisterPage() {
     setError(null);
     try {
       await verifyEmail({ email, otp });
+      
+      // Request and register push notifications (only prompts if default, or updates if already granted)
+      requestPushPermission().catch(console.error);
+
       navigate({ to: redirect });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed.");

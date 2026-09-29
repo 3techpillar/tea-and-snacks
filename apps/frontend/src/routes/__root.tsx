@@ -83,9 +83,35 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 import { useNotifications } from "@/hooks/useNotifications";
+import { resolveNotificationUrl } from "@/lib/notification-store";
+import { useAuth } from "@/lib/auth-client";
+import { useNavigate } from "@tanstack/react-router";
 
 function NotificationInitializer() {
   useNotifications();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if the app was opened by clicking a background notification
+    const params = new URLSearchParams(window.location.search);
+    const notificationType = params.get("notificationType");
+    const orderId = params.get("orderId");
+
+    if (notificationType || orderId) {
+      const targetUrl = resolveNotificationUrl(
+        { type: notificationType || undefined, orderId: orderId || undefined },
+        user?.role,
+        user?.vendorId
+      );
+
+      if (targetUrl) {
+        // Clear the query params and navigate to the correct page
+        navigate({ to: targetUrl, replace: true });
+      }
+    }
+  }, [user, navigate]);
+
   return null;
 }
 

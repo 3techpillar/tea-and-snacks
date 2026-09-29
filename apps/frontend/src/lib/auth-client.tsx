@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi, type ChangePasswordInput, type UpdateProfileInput } from "@/lib/api/auth";
 import type { PublicUser, UserRole } from "@tea-and-snacks/shared";
 import { hasPermission, type Permission } from "@tea-and-snacks/shared";
+import { apiClient } from "@/lib/api-client";
 
 export type CurrentUser = PublicUser | null;
 
@@ -78,10 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const deviceId = localStorage.getItem("fcm_device_id");
       if (deviceId) {
         try {
-          const API_BASE = import.meta.env.VITE_API_URL ?? "";
-          await fetch(`${API_BASE}/api/users/fcm-token/${deviceId}`, { 
-            method: "DELETE" 
-          });
+          await apiClient.delete(`/api/users/fcm-token/${deviceId}`);
+          localStorage.removeItem("fcm_registered_token");
         } catch (e) {
           console.error("Failed to unregister FCM token", e);
         }

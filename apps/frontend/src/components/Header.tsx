@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth-client";
 import { UserMenu } from "@/components/UserMenu";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function Header() {
   const { count } = useCart();
@@ -76,7 +77,8 @@ export function Header() {
           )}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {user && <NotificationBell />}
           {user ? (
             <UserMenu />
           ) : (
