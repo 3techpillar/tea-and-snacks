@@ -78,6 +78,7 @@ export async function updateOrderStatus(
   await sendToUser(String(order.userId), {
     title: `Order ${status}`,
     body: `Your order #${order.displayId} is now ${status}.`,
+    data: { type: "order_status", orderId: String(order.displayId) },
   });
 
   return broadcast(order);

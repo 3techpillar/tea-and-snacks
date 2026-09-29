@@ -15,6 +15,7 @@ import { Route as CartRouteImport } from "./routes/cart"
 import { Route as CheckoutRouteImport } from "./routes/checkout"
 import { Route as ForgotPasswordRouteImport } from "./routes/forgot-password"
 import { Route as LoginRouteImport } from "./routes/login"
+import { Route as NotificationsRouteImport } from "./routes/notifications"
 import { Route as ProfileRouteImport } from "./routes/profile"
 import { Route as RegisterRouteImport } from "./routes/register"
 import { Route as SearchRouteImport } from "./routes/search"
@@ -62,6 +63,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: "/notifications",
+  path: "/notifications",
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   "/checkout": typeof CheckoutRoute
   "/forgot-password": typeof ForgotPasswordRoute
   "/login": typeof LoginRoute
+  "/notifications": typeof NotificationsRoute
   "/profile": typeof ProfileRoute
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   "/checkout": typeof CheckoutRoute
   "/forgot-password": typeof ForgotPasswordRoute
   "/login": typeof LoginRoute
+  "/notifications": typeof NotificationsRoute
   "/profile": typeof ProfileRoute
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   "/checkout": typeof CheckoutRoute
   "/forgot-password": typeof ForgotPasswordRoute
   "/login": typeof LoginRoute
+  "/notifications": typeof NotificationsRoute
   "/profile": typeof ProfileRoute
   "/register": typeof RegisterRoute
   "/search": typeof SearchRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | "/checkout"
     | "/forgot-password"
     | "/login"
+    | "/notifications"
     | "/profile"
     | "/register"
     | "/search"
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | "/checkout"
     | "/forgot-password"
     | "/login"
+    | "/notifications"
     | "/profile"
     | "/register"
     | "/search"
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | "/checkout"
     | "/forgot-password"
     | "/login"
+    | "/notifications"
     | "/profile"
     | "/register"
     | "/search"
@@ -322,6 +334,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   SearchRoute: typeof SearchRoute
@@ -375,6 +388,13 @@ declare module "@tanstack/react-router" {
       path: "/login"
       fullPath: "/login"
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/notifications": {
+      id: "/notifications"
+      path: "/notifications"
+      fullPath: "/notifications"
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/profile": {
@@ -550,6 +570,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   SearchRoute: SearchRoute,

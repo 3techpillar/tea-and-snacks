@@ -81,6 +81,7 @@ export async function placeOrder(
     await sendToVendor(vId, {
       title: "New Order Received!",
       body: `Order #${order.displayId} from ${data.customerName} for ₹${total}`,
+      data: { type: "new_order", orderId: String(order.displayId) },
     });
   }
 
@@ -88,6 +89,7 @@ export async function placeOrder(
   await sendToAdmins({
     title: "New Order Placed",
     body: `Order #${order.displayId} for ₹${total} (Vendor: ${uniqueVendorIds.join(", ")})`,
+    data: { type: "new_order", orderId: String(order.displayId) },
   });
 
   return toDemoOrder(order);
@@ -166,7 +168,7 @@ export async function addChatMessage(orderId: string, text: string, user: Public
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
   if (!order) throw new Error("Order not found.");
-  
+
   checkOrderAccess(order, user);
 
   order.messages.push({
@@ -187,7 +189,7 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
   if (!order) throw new Error("Order not found.");
-  
+
   checkOrderAccess(order, user);
 
   if (order.status === "Cancelled" || order.status === "Delivered" || order.status === "Rejected") {
@@ -215,6 +217,7 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
       await sendToVendor(vId, {
         title: "Order Cancelled",
         body: `Order #${order.displayId} was cancelled by the customer.`,
+        data: { type: "order_cancelled", orderId: String(order.displayId) },
       });
     }
   } else {
@@ -222,6 +225,7 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
     await sendToUser(String(order.userId), {
       title: "Order Cancelled",
       body: `Your order #${order.displayId} was cancelled by the ${user.role}.`,
+      data: { type: "order_cancelled", orderId: String(order.displayId) },
     });
   }
 
