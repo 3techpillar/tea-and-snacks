@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-client";
 import { useCatalog } from "@/lib/catalog-client";
+import { Home } from "lucide-react";
 
 export const Route = createFileRoute("/vendor/")({
   head: () => ({
@@ -80,6 +81,16 @@ function VendorEntry() {
         Demo logins seeded by <code>bun run seed</code>: e.g.{" "}
         <code>tea-point@vendors.easyfood.demo</code> / <code>vendor123</code>.
       </p>
+
+      <div className="mt-12 flex justify-center border-t border-border pt-8">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Home className="h-4 w-4" />
+          Back to Home
+        </Link>
+      </div>
     </div>
   );
 }

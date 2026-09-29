@@ -3,7 +3,7 @@ import { useNotificationStore, resolveNotificationUrl } from "@/lib/notification
 import { useAuth } from "@/lib/auth-client";
 import { Bell, Check, Trash2 } from "lucide-react";
 
-export const Route = createFileRoute("/notifications")({
+export const Route = createFileRoute("/(main)/notifications")({
   head: () => ({
     meta: [{ title: "Notifications — Tea & Snacks" }],
   }),

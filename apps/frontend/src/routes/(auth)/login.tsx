@@ -12,7 +12,7 @@ import {
 
 import { requestPushPermission } from "@/hooks/useNotifications";
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/(auth)/login")({
   validateSearch: (search: Record<string, unknown>) => ({
     redirect:
       typeof search["redirect"] === "string"

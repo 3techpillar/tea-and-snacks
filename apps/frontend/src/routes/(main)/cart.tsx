@@ -3,7 +3,7 @@ import { useCart } from "@/lib/cart";
 import { useCatalog } from "@/lib/catalog-client";
 import { productImage } from "@/lib/images";
 
-export const Route = createFileRoute("/cart")({
+export const Route = createFileRoute("/(main)/cart")({
   head: () => ({
     meta: [
       { title: "Your cart — Easy Food" },

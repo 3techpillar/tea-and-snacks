@@ -4,6 +4,7 @@ import { ordersApi } from "@/lib/api/orders";
 import { statusToneClass } from "@/lib/orders";
 import { useAuth } from "@/lib/auth-client";
 import { ShoppingBag, ArrowRight } from "lucide-react";
+import { Loader } from "@/components/Loader";
 
 export function RecentOrders() {
   const { user } = useAuth();
@@ -27,9 +28,7 @@ export function RecentOrders() {
 
       <div className="flex-1 p-6 flex flex-col">
         {ordersQuery.isLoading ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground py-8">
-            Loading orders...
-          </div>
+          <Loader text="Loading orders..." className="py-8" />
         ) : orders.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center py-8">
             <ShoppingBag className="h-10 w-10 text-muted-foreground/30 mb-3" />

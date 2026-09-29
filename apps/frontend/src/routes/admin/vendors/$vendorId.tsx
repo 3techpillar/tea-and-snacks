@@ -3,7 +3,9 @@ import { useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { adminApi } from "@/lib/api/admin";
+import { apiClient } from "@/lib/api-client";
 import { VendorForm } from "@/components/admin/VendorForm";
+import { Loader } from "@/components/Loader";
 
 export const Route = createFileRoute("/admin/vendors/$vendorId")({
   component: EditVendorPage,
@@ -32,15 +34,8 @@ function EditVendorPage() {
       if (file) {
         const formDataUpload = new FormData();
         formDataUpload.append("image", file);
-        const API_BASE = import.meta.env.VITE_API_URL ?? "";
-        const res = await fetch(`${API_BASE}/api/upload`, {
-          method: "POST",
-          body: formDataUpload,
-          credentials: "include"
-        });
-        if (!res.ok) throw new Error("Image upload failed");
-        const json = await res.json();
-        imageUrl = json.data?.imageUrl || json.imageUrl;
+        const json = await apiClient.post<any>("/api/upload", formDataUpload);
+        imageUrl = json.imageUrl || json.data?.imageUrl || json;
       }
 
       await adminApi.updateVendor(vendorId, {
@@ -59,7 +54,7 @@ function EditVendorPage() {
   };
 
   if (isLoading) {
-    return <div className="animate-pulse p-8 text-center text-muted-foreground">Loading stall details...</div>;
+    return <Loader text="Loading stall details..." />;
   }
 
   if (!vendor) {

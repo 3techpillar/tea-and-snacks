@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate, Outlet, useChildMatches } from "@tanstack/react-router";
 import { useCatalog } from "@/lib/catalog-client";
 import { useAuth } from "@/lib/auth-client";
-import { ClipboardList, UtensilsCrossed, Settings } from "lucide-react";
+import { ClipboardList, UtensilsCrossed, Settings, Home } from "lucide-react";
 import { LiveOrdersTab } from "@/components/vendor/LiveOrdersTab";
 import { MenuManagementTab } from "@/components/vendor/MenuManagementTab";
 import { VendorSettingsTab } from "@/components/vendor/VendorSettingsTab";
+import { UserMenu } from "@/components/UserMenu";
 
 type VendorDashboardSearch = {
   tab?: "orders" | "menu" | "settings";
@@ -85,10 +86,10 @@ function VendorDashboard() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full shrink-0 border-r border-border bg-card p-4 md:w-64">
-        <div className="mb-8 hidden md:block">
+    <div className="flex h-full flex-col md:flex-row">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-card p-4">
+        <div className="mb-8">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl gradient-hero text-xl">
               {vendor.emoji}
@@ -100,7 +101,7 @@ function VendorDashboard() {
           </div>
         </div>
 
-        <nav className="flex space-x-2 overflow-x-auto md:flex-col md:space-x-0 md:space-y-2">
+        <nav className="flex flex-col space-y-2">
           <button
             onClick={() => setActiveTab("orders")}
             className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
@@ -130,18 +131,28 @@ function VendorDashboard() {
           </button>
         </nav>
 
-        <div className="mt-8 hidden border-t border-border pt-4 md:block">
+        <div className="mt-auto border-t border-border pt-4 flex flex-col gap-4">
           <Link
-            to="/vendor"
-            className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground hover:underline"
+            to="/"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Switch Stall →
+            <Home className="h-4 w-4" />
+            Back Home
           </Link>
+          <div className="flex items-center justify-between">
+            <Link
+              to="/vendor"
+              className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground hover:underline"
+            >
+              Switch Stall →
+            </Link>
+            <UserMenu />
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-background p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto bg-background p-4 md:p-8 pb-20 md:pb-8">
         <div className="mx-auto max-w-4xl">
           {isChildRoute ? (
             <Outlet />
@@ -162,6 +173,37 @@ function VendorDashboard() {
           )}
         </div>
       </main>
+
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background/85 backdrop-blur-lg pb-safe-bottom">
+        <button
+          onClick={() => setActiveTab("orders")}
+          className={`flex flex-col items-center justify-center p-3 text-[10px] font-medium transition-colors ${
+            !activeTab || activeTab === "orders" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <ClipboardList className="mb-1 h-5 w-5" />
+          Orders
+        </button>
+        <button
+          onClick={() => setActiveTab("menu")}
+          className={`flex flex-col items-center justify-center p-3 text-[10px] font-medium transition-colors ${
+            activeTab === "menu" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <UtensilsCrossed className="mb-1 h-5 w-5" />
+          Menu
+        </button>
+        <button
+          onClick={() => setActiveTab("settings")}
+          className={`flex flex-col items-center justify-center p-3 text-[10px] font-medium transition-colors ${
+            activeTab === "settings" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Settings className="mb-1 h-5 w-5" />
+          Settings
+        </button>
+      </nav>
     </div>
   );
 }

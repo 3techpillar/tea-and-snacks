@@ -7,7 +7,7 @@ import { useCatalog } from "@/lib/catalog-client";
 import { useAuth } from "@/lib/auth-client";
 import { UpiQr } from "@/components/UpiQr";
 
-export const Route = createFileRoute("/checkout")({
+export const Route = createFileRoute("/(main)/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — Easy Food" },

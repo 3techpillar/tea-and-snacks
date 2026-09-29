@@ -7,7 +7,7 @@ import { RegisterForm } from "@/components/auth/RegisterForm";
 import { OtpVerificationForm } from "@/components/auth/OtpVerificationForm";
 import { requestPushPermission } from "@/hooks/useNotifications";
 
-export const Route = createFileRoute("/register")({
+export const Route = createFileRoute("/(auth)/register")({
   component: RegisterPage,
   validateSearch: (search: Record<string, unknown>) => {
     return {

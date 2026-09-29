@@ -5,7 +5,7 @@ import { RecentOrders } from "@/components/RecentOrders";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { Shield, LayoutDashboard, Store } from "lucide-react";
 
-export const Route = createFileRoute("/profile")({
+export const Route = createFileRoute("/(main)/profile")({
   head: () => ({
     meta: [{ title: "Account Settings — Easy Food" }],
   }),

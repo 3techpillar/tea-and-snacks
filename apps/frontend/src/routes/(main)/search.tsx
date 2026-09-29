@@ -4,8 +4,9 @@ import { SearchBar } from "@/components/SearchBar";
 import { VendorCard } from "@/components/VendorCard";
 import { useQuery } from "@tanstack/react-query";
 import { catalogApi } from "@/lib/api/catalog";
+import { Loader } from "@/components/Loader";
 
-export const Route = createFileRoute("/search")({
+export const Route = createFileRoute("/(main)/search")({
   validateSearch: (search: Record<string, unknown>) => ({
     q: typeof search["q"] === "string" ? (search["q"] as string) : "",
   }),
@@ -58,6 +59,8 @@ function SearchPage() {
         <p className="mt-6 text-muted-foreground">
           Type something tasty to get started.
         </p>
+      ) : isLoading ? (
+        <Loader text="Searching..." className="mt-12" />
       ) : results.length === 0 ? (
         <div className="mt-10 text-center">
           <p className="text-4xl">🍽️</p>

@@ -10,7 +10,7 @@ import {
   AuthSubmitButton,
 } from "@/components/auth/AuthComponents";
 
-export const Route = createFileRoute("/forgot-password")({
+export const Route = createFileRoute("/(auth)/forgot-password")({
   head: () => ({
     meta: [{ title: "Forgot Password — Easy Food" }],
   }),

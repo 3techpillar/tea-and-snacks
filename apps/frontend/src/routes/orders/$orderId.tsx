@@ -8,6 +8,7 @@ import { orderStatuses } from "@/lib/orders";
 import { useAuth } from "@/lib/auth-client";
 import { useOrderRoomUpdates, useIsSocketConnected } from "@/lib/realtime-client";
 import { OrderChat } from "@/components/OrderChat";
+import { Loader } from "@/components/Loader";
 
 
 
@@ -149,11 +150,7 @@ function OrderPage() {
   }
 
   if (orderQuery.isLoading) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-muted-foreground">
-        Loading…
-      </div>
-    );
+    return <Loader text="Loading order..." />;
   }
 
   const order = orderQuery.data;

@@ -10,6 +10,7 @@ import {
 } from "@/lib/orders";
 import { useOrderRoomUpdates, useIsSocketConnected } from "@/lib/realtime-client";
 import { OrderChat } from "@/components/OrderChat";
+import { Loader } from "@/components/Loader";
 
 const filters = ["New", "Accepted", "Preparing", "Out for Delivery", "Delivered", "All"] as const;
 type Filter = (typeof filters)[number];
@@ -318,7 +319,7 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
       </div>
 
       {ordersQuery.isLoading ? (
-        <p className="mt-8 text-muted-foreground">Loading orders…</p>
+        <Loader text="Loading orders..." className="mt-12" />
       ) : visible.length === 0 ? (
         <p className="mt-8 text-muted-foreground">No orders in this view yet.</p>
       ) : (

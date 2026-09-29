@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { adminApi } from "@/lib/api/admin";
+import { apiClient } from "@/lib/api-client";
 import { VendorForm } from "@/components/admin/VendorForm";
 
 export const Route = createFileRoute("/admin/vendors/create")({
@@ -32,15 +33,8 @@ function CreateVendorPage() {
       if (file) {
         const formDataUpload = new FormData();
         formDataUpload.append("image", file);
-        const API_BASE = import.meta.env.VITE_API_URL ?? "";
-        const res = await fetch(`${API_BASE}/api/upload`, {
-          method: "POST",
-          body: formDataUpload,
-          credentials: "include"
-        });
-        if (!res.ok) throw new Error("Image upload failed");
-        const json = await res.json();
-        imageUrl = json.data?.imageUrl || json.imageUrl;
+        const json = await apiClient.post<any>("/api/upload", formDataUpload);
+        imageUrl = json.imageUrl || json.data?.imageUrl || json;
       }
 
       const res = await adminApi.createVendor({

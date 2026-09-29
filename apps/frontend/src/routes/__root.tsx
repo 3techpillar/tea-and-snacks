@@ -120,18 +120,21 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { location } = useRouterState();
   const isAuthRoute = ["/login", "/register", "/forgot-password"].includes(location.pathname);
+  const isDashboardRoute = location.pathname.startsWith("/admin") || location.pathname.startsWith("/vendor");
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <NotificationInitializer />
         <CartProvider>
-          {isAuthRoute ? (
+          {isAuthRoute || isDashboardRoute ? (
             <div className="flex h-screen flex-col overflow-hidden bg-background">
-              <div className="lg:hidden">
-                <Header />
-              </div>
-              <main className="relative flex-1 overflow-hidden">
+              {(isAuthRoute || isDashboardRoute) && (
+                <div className="md:hidden">
+                  <Header />
+                </div>
+              )}
+              <main className="relative flex-1 overflow-y-auto">
                 <Outlet />
               </main>
             </div>

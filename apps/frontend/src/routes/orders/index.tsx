@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api/orders";
 import { statusToneClass } from "@/lib/orders";
 import { useAuth } from "@/lib/auth-client";
+import { Loader } from "@/components/Loader";
 
 export const Route = createFileRoute("/orders/")({
   head: () => ({
@@ -52,7 +53,7 @@ function OrdersPage() {
       <h1 className="text-3xl font-bold">My orders</h1>
 
       {ordersQuery.isLoading ? (
-        <p className="mt-4 text-muted-foreground">Loading…</p>
+        <Loader text="Loading orders..." className="mt-8" />
       ) : orders.length === 0 ? (
         <p className="mt-4 text-muted-foreground">
           No orders yet on this account.
