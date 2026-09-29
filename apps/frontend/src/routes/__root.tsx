@@ -13,6 +13,7 @@ import { AuthProvider } from "@/lib/auth-client";
 import { catalogQueryOptions } from "@/lib/catalog-client";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
+import { Footer } from "@/components/Footer";
 
 function NotFoundComponent() {
   return (
@@ -140,9 +141,7 @@ function RootComponent() {
               <main className="flex-1 pb-16 sm:pb-0">
                 <Outlet />
               </main>
-              <footer className="border-t border-border pb-20 pt-8 text-center text-sm text-muted-foreground sm:pb-8">
-                Easy Food · demo build, backed by MongoDB
-              </footer>
+              <Footer />
               <BottomNav />
             </div>
           )}
