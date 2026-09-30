@@ -61,6 +61,12 @@ export async function placeOrder(
       price,
     };
   });
+
+  const uniqueVendorIdsForValidation = new Set(items.map((i) => i.vendorId).filter(Boolean));
+  if (uniqueVendorIdsForValidation.size > 1) {
+    throw new Error("An order can only contain items from a single vendor stall.");
+  }
+
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
 
   const orderNumber = await nextOrderNumber();

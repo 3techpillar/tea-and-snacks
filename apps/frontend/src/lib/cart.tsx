@@ -115,15 +115,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
       detailed,
       count: lines.reduce((s, l) => s + l.qty, 0),
       total: detailed.reduce((s, d) => s + (d.variant ? d.variant.price : d.product.price) * d.qty, 0),
-      add: (productId, variantId) =>
+      add: (productId, variantId) => {
+        const productToAdd = products.find((p) => p.id === productId);
+        if (!productToAdd) return;
+
         setLines((prev) => {
+          if (prev.length > 0) {
+            const firstItemProduct = products.find((p) => p.id === prev[0].productId);
+            if (firstItemProduct && firstItemProduct.vendorId !== productToAdd.vendorId) {
+              if (
+                window.confirm(
+                  "You can only order from one vendor at a time. Do you want to clear your cart and start a new order with this item?"
+                )
+              ) {
+                return [{ productId, variantId, qty: 1 }];
+              }
+              return prev;
+            }
+          }
+
           const found = prev.find((l) => l.productId === productId && l.variantId === variantId);
           return found
             ? prev.map((l) =>
                 l.productId === productId && l.variantId === variantId ? { ...l, qty: l.qty + 1 } : l,
               )
             : [...prev, { productId, variantId, qty: 1 }];
-        }),
+        });
+      },
       remove: (productId, variantId) =>
         setLines((prev) => prev.filter((l) => !(l.productId === productId && l.variantId === variantId))),
       setQty: (productId, qty, variantId) =>
