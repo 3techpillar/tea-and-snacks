@@ -7,8 +7,13 @@ import { NotFoundError, ValidationError } from "../utils/errors";
 export async function getOrders(req: Request, res: Response, next: NextFunction) {
   try {
     const vendorId = req.params.vendorId as string;
+    const status = req.query.status as string | undefined;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    
     requireVendorAccess(req.user, vendorId);
-    const orders = await vendorService.getVendorOrders(vendorId);
+    
+    const orders = await vendorService.getVendorOrders(vendorId, status, page, limit);
     res.json(orders);
   } catch (err) {
     next(err);

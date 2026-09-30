@@ -2,8 +2,11 @@ import { apiClient } from "../api-client";
 import type { DemoOrder, OrderStatus } from "@tea-and-snacks/shared";
 
 export const vendorApi = {
-  getOrders: (vendorId: string) =>
-    apiClient.get<DemoOrder[]>(`/api/vendor/${vendorId}/orders`),
+  getOrders: (vendorId: string, status?: string, page?: number, limit?: number) =>
+    apiClient.get<{ data: DemoOrder[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
+      `/api/vendor/${vendorId}/orders`,
+      { params: { status, page, limit } }
+    ),
 
   getStats: (vendorId: string) =>
     apiClient.get<{

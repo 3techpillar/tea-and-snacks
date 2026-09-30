@@ -25,12 +25,40 @@ function broadcast(order: OrderDoc): DemoOrder {
   return demo;
 }
 
-export async function getVendorOrders(vendorId: string): Promise<DemoOrder[]> {
+export async function getVendorOrders(
+  vendorId: string,
+  status?: string,
+  page: number = 1,
+  limit: number = 50
+): Promise<{ data: DemoOrder[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
   await connectDB();
-  const orders = await Order.find({ "items.vendorId": vendorId }).sort({
-    placedAt: -1,
-  });
-  return orders.map(toDemoOrder);
+  
+  const query: any = { "items.vendorId": vendorId };
+  
+  if (status && status !== "All") {
+    if (status === "Live") {
+      query.status = { $nin: ["Delivered", "Cancelled", "Rejected"] };
+    } else {
+      query.status = status;
+    }
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [orders, total] = await Promise.all([
+    Order.find(query).sort({ placedAt: -1 }).skip(skip).limit(limit),
+    Order.countDocuments(query)
+  ]);
+
+  return {
+    data: orders.map(toDemoOrder),
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
 }
 
 export async function getVendorStats(vendorId: string) {

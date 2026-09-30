@@ -120,7 +120,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { location } = useRouterState();
   const isAuthRoute = ["/login", "/register", "/forgot-password"].includes(location.pathname);
-  const isDashboardRoute = location.pathname.startsWith("/admin") || location.pathname.startsWith("/vendor");
+  const isDashboardRoute = location.pathname.startsWith("/admin") || location.pathname === "/vendor" || location.pathname.startsWith("/vendor/");
 
   return (
     <QueryClientProvider client={queryClient}>

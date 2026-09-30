@@ -69,8 +69,8 @@ axiosInstance.interceptors.response.use(
 );
 
 export const apiClient = {
-  get: <T>(path: string) => axiosInstance.get<any, T>(path),
-  post: <T>(path: string, body?: unknown) => axiosInstance.post<any, T>(path, body),
+  get: <T>(path: string, config?: import("axios").AxiosRequestConfig) => axiosInstance.get<any, T>(path, config),
+  post: <T>(path: string, body?: unknown, config?: import("axios").AxiosRequestConfig) => axiosInstance.post<any, T>(path, body, config),
   patch: <T>(path: string, body?: unknown) => axiosInstance.patch<any, T>(path, body),
   put: <T>(path: string, body?: unknown) => axiosInstance.put<any, T>(path, body),
   delete: <T>(path: string) => axiosInstance.delete<any, T>(path),

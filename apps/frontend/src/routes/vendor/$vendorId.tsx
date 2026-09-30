@@ -9,11 +9,15 @@ import { UserMenu } from "@/components/UserMenu";
 
 type VendorDashboardSearch = {
   tab?: "orders" | "menu" | "settings";
+  status?: string;
+  page?: number;
 };
 
 export const Route = createFileRoute("/vendor/$vendorId")({
   validateSearch: (search: Record<string, unknown>): VendorDashboardSearch => ({
     tab: (search.tab as "orders" | "menu" | "settings") || "orders",
+    status: search.status as string | undefined,
+    page: search.page ? Number(search.page) : 1,
   }),
   head: () => ({
     meta: [
