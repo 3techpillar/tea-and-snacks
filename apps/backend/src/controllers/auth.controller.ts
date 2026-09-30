@@ -14,6 +14,7 @@ import {
 import { env } from "../config/env";
 import { sendSuccess, sendCreated } from "../utils/response";
 import { UnauthorizedError } from "../utils/errors";
+import { MESSAGES } from "../constants/messages";
 
 const ACCESS_COOKIE = "easy_food_access";
 const REFRESH_COOKIE = "easy_food_refresh";
@@ -99,7 +100,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction) {
   try {
     const token = req.cookies?.[REFRESH_COOKIE];
     if (!token) {
-      throw new UnauthorizedError("No refresh token provided.");
+      throw new UnauthorizedError(MESSAGES.NO_REFRESH_TOKEN);
     }
 
     const { user, tokens } = await refreshTokens(token);
@@ -117,7 +118,7 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
       await logoutUser(req.user.id);
     }
     clearAuthCookies(res);
-    sendSuccess(res, { message: "Signed out successfully." });
+    sendSuccess(res, { message: MESSAGES.SIGNED_OUT_SUCCESSFULLY });
   } catch (err) {
     next(err);
   }
@@ -138,7 +139,7 @@ export async function changePasswordHandler(
     }
     const { user, tokens } = await changePassword(req.user.id, req.body);
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-    sendSuccess(res, { user, message: "Password changed successfully." });
+    sendSuccess(res, { user, message: MESSAGES.PASSWORD_CHANGED_SUCCESSFULLY });
   } catch (err) {
     next(err);
   }
@@ -154,7 +155,7 @@ export async function updateProfileHandler(
       throw new UnauthorizedError();
     }
     const { user } = await updateProfile(req.user.id, req.body);
-    sendSuccess(res, { user, message: "Profile updated successfully." });
+    sendSuccess(res, { user, message: MESSAGES.PROFILE_UPDATED_SUCCESSFULLY });
   } catch (err) {
     next(err);
   }

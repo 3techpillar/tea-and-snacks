@@ -6,6 +6,7 @@ import { emitOrderUpdated } from "../realtime/socket";
 import { toDemoOrder } from "../utils/orderMapper.util";
 import type { PublicUser, DemoOrder } from "@tea-and-snacks/shared";
 import { sendToVendor, sendToAdmins, sendToUser } from "./notification.service";
+import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -32,11 +33,11 @@ export async function placeOrder(
   const items = data.items.map(({ productId, variantId, qty }) => {
     const product = byId.get(productId) as any;
     if (!product)
-      throw new Error(`Product ${productId} is no longer available.`);
+      throw new Error(DYNAMIC_MESSAGES.PRODUCT_NO_LONGER_AVAILABLE(productId));
 
     const isOrderable = product.status === "available" || (!product.status && product.isAvailable !== false);
     if (!isOrderable) {
-      throw new Error(`Product "${product.name}" is currently unavailable for order.`);
+      throw new Error(DYNAMIC_MESSAGES.PRODUCT_UNAVAILABLE_FOR_ORDER(product.name));
     }
 
     let price = product.price;
@@ -64,7 +65,7 @@ export async function placeOrder(
 
   const uniqueVendorIdsForValidation = new Set(items.map((i) => i.vendorId).filter(Boolean));
   if (uniqueVendorIdsForValidation.size > 1) {
-    throw new Error("An order can only contain items from a single vendor stall.");
+    throw new Error(MESSAGES.SINGLE_VENDOR_ORDER_ONLY);
   }
 
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -122,7 +123,7 @@ export async function getOrder(
       (i: { vendorId?: string }) => i.vendorId === user.vendorId,
     );
   if (!isOwner && !isVendorOnOrder && user.role !== "admin") {
-    throw new Error("You don't have access to this order.");
+    throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
   }
   return toDemoOrder(order);
 }
@@ -138,13 +139,13 @@ export async function uploadPaymentProof(
   user: PublicUser,
 ): Promise<DemoOrder> {
   if (data.dataUrl.length > MAX_PROOF_BYTES * 1.4) {
-    throw new Error("Screenshot is too large (max 5MB).");
+    throw new Error(MESSAGES.SCREENSHOT_TOO_LARGE);
   }
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
-  if (!order) throw new Error("Order not found.");
+  if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
   if (String(order.userId) !== user.id)
-    throw new Error("You don't have access to this order.");
+    throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
 
   order.paymentProofName = data.fileName;
   order.paymentProofUrl = data.dataUrl;
@@ -161,11 +162,11 @@ function checkOrderAccess(order: any, user: PublicUser) {
   if (user.role === "admin") return;
   if (user.role === "customer") {
     if (String(order.userId) !== user.id) {
-      throw new Error("You don't have access to this order.");
+      throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
     }
   } else if (user.role === "vendor") {
     if (!order.items.some((i: any) => i.vendorId === user.vendorId)) {
-      throw new Error("You don't have access to this order.");
+      throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
     }
   }
 }
@@ -173,7 +174,7 @@ function checkOrderAccess(order: any, user: PublicUser) {
 export async function addChatMessage(orderId: string, text: string, user: PublicUser): Promise<DemoOrder> {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
-  if (!order) throw new Error("Order not found.");
+  if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
 
   checkOrderAccess(order, user);
 
@@ -194,16 +195,16 @@ export async function addChatMessage(orderId: string, text: string, user: Public
 export async function cancelOrder(orderId: string, reason: string | undefined, user: PublicUser): Promise<DemoOrder> {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
-  if (!order) throw new Error("Order not found.");
+  if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
 
   checkOrderAccess(order, user);
 
   if (order.status === "Cancelled" || order.status === "Delivered" || order.status === "Rejected") {
-    throw new Error(`Order is already ${order.status}`);
+    throw new Error(DYNAMIC_MESSAGES.ORDER_IS_ALREADY(order.status));
   }
 
   if (user.role === "customer" && order.status !== "New") {
-    throw new Error("Customers can only cancel orders when they are New.");
+    throw new Error(MESSAGES.CANT_CANCEL_IN_PROGRESS_ORDER);
   }
 
   order.status = "Cancelled";

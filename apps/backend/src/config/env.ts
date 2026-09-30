@@ -1,8 +1,10 @@
 import "dotenv/config";
 
+import { DYNAMIC_MESSAGES } from "../constants/messages";
+
 function required(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  if (!value) throw new Error(DYNAMIC_MESSAGES.MISSING_ENV_VAR(name));
   return value;
 }
 

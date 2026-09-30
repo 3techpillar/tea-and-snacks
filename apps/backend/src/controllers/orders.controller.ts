@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { requireUser } from "../middleware/auth.middleware";
 import * as ordersService from "../services/orders.service";
+import { MESSAGES } from "../constants/messages";
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
@@ -28,7 +29,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
     const orderId = req.params.orderId as string;
     const order = await ordersService.getOrder(orderId, user);
     if (!order) {
-      res.status(404).json({ message: "Order not found." });
+      res.status(404).json({ message: MESSAGES.ORDER_NOT_FOUND });
       return;
     }
     res.json(order);

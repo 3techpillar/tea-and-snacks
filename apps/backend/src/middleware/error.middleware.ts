@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/errors";
 import { env } from "../config/env";
+import { MESSAGES } from "../constants/messages";
 
 export function errorMiddleware(
   err: Error,
@@ -27,7 +28,7 @@ export function errorMiddleware(
       success: false,
       error: {
         code: "VALIDATION_ERROR",
-        message: "Validation failed",
+        message: MESSAGES.VALIDATION_FAILED,
         details: err,
       },
     });
@@ -39,7 +40,7 @@ export function errorMiddleware(
       success: false,
       error: {
         code: "CONFLICT",
-        message: "A resource with that identifier already exists.",
+        message: MESSAGES.RESOURCE_ALREADY_EXISTS,
       },
     });
     return;

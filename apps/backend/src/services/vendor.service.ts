@@ -5,16 +5,17 @@ import { toDemoOrder } from "../utils/orderMapper.util";
 import { vendorSlice, ALLOWED_TRANSITIONS } from "@tea-and-snacks/shared";
 import type { DemoOrder } from "@tea-and-snacks/shared";
 import { sendToUser } from "./notification.service";
+import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
 
 /** Loads the order and 403s unless it actually contains an item for this vendor. */
 async function loadOrderForVendor(orderId: string, vendorId: string) {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
-  if (!order) throw new Error("Order not found.");
+  if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
   if (
     !order.items.some((i: { vendorId?: string }) => i.vendorId === vendorId)
   ) {
-    throw new Error("This order doesn't include any of your items.");
+    throw new Error(MESSAGES.ORDER_NOT_FOR_YOUR_STALL);
   }
   return order;
 }
@@ -93,10 +94,10 @@ export async function updateOrderStatus(
     from !== status &&
     !ALLOWED_TRANSITIONS[from].includes(status)
   ) {
-    throw new Error(`Can't move an order from ${from} to ${status}.`);
+    throw new Error(DYNAMIC_MESSAGES.CANT_MOVE_ORDER(from, status));
   }
   if (status === "Delivered" && !order.paymentConfirmed) {
-    throw new Error("Confirm payment before marking the order Delivered.");
+    throw new Error(MESSAGES.PAYMENT_NOT_CONFIRMED);
   }
 
   order.status = status;

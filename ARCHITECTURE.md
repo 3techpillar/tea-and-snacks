@@ -49,7 +49,7 @@ The frontend is a Single Page Application (SPA) prioritizing type safety, perfor
   - **Dashboard Isolation**: `/admin` and `/vendor` routes dynamically hide the consumer-facing `Header` and `BottomNav` to present an isolated, app-like dashboard view.
 - **State Management**:
   - **Server State**: **TanStack Query (React Query)** handles data fetching, caching, background refetching, and pagination.
-  - **Client State**: **Zustand** is used for synchronous local state, such as managing the global Shopping Cart.
+  - **Client State**: **Zustand** is used for synchronous local state, such as managing the global Shopping Cart. The Cart strictly enforces that a user can only add items from a single vendor stall at a time.
 - **API Client**: A customized **Axios** instance (`apiClient.ts`).
   - Implements a response interceptor to automatically catch `401 Unauthorized` errors, call the `/refresh` token endpoint, and seamlessly replay the failed request.
 - **Styling**: **Tailwind CSS v4** combined with `lucide-react` for iconography and Radix UI for accessible primitives (modals, dropdowns, etc.).
@@ -71,6 +71,7 @@ The backend enforces a strict **Controller-Service-Route** separation of concern
 1. **Routes (`/src/routes`)**: Define API paths, apply authentication/RBAC middleware, and pass execution to controllers.
 2. **Controllers (`/src/controllers`)**: Parse incoming request parameters, query strings, and body payloads (validating via Zod), call the appropriate Service, and handle HTTP responses (200 OK, 400 Bad Request).
 3. **Services (`/src/services`)**: Contain pure business logic and database interactions. They emit Socket.io events and trigger Push Notifications.
+4. **Standardized Messages (`/src/constants/messages.ts`)**: All API response messages and errors are strictly centralized here to ensure consistent messaging across all routes, controllers, and services.
 
 ---
 
@@ -78,9 +79,9 @@ The backend enforces a strict **Controller-Service-Route** separation of concern
 
 The system's most complex flow is the lifecycle of an order. Here is the step-by-step data flow:
 
-1. **Cart & Checkout**: The user builds a cart locally (Zustand). Upon checkout, they upload a UPI payment screenshot.
+1. **Cart & Checkout**: The user builds a cart locally (Zustand). The cart logic enforces a single-vendor policy. Upon checkout, they upload a UPI payment screenshot.
 2. **API Request**: The frontend calls `POST /api/orders` via Axios. The payload includes customer details and the screenshot file (handled via Multer).
-3. **Database Creation**: The `OrderService` validates the stock, calculates totals, saves the `Order` document in MongoDB with a status of `Pending`, and generates a daily Token number.
+3. **Database Creation**: The `OrderService` validates the stock and confirms all items belong to a single vendor. It calculates totals, saves the `Order` document in MongoDB with a status of `Pending`, and generates a daily Token number.
 4. **Realtime Broadcast**: 
    - `socket.io` emits a `new-order` event specifically to the "room" belonging to the target `vendorId`.
    - The Vendor's live dashboard instantly updates without a page refresh.
