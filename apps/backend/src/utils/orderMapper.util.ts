@@ -1,13 +1,13 @@
 import type { OrderDoc } from "../models/Order.model";
-import type { DemoOrder, BuildingId } from "@tea-and-snacks/shared";
+import type { PublicOrder, BuildingId } from "@tea-and-snacks/shared";
 
 /**
- * Maps a Mongoose order document to the wire-format DemoOrder shape used by
+ * Maps a Mongoose order document to the wire-format PublicOrder shape used by
  * both server and the frontend. Mongoose subdocuments (o.items) aren't plain
  * objects — they carry methods/getters that JSON serialization can't handle —
  * so this copies out just the plain fields.
  */
-export function toDemoOrder(o: OrderDoc): DemoOrder {
+export function toPublicOrder(o: OrderDoc): PublicOrder {
   return {
     id: o.displayId,
     token: o.token,
@@ -21,7 +21,7 @@ export function toDemoOrder(o: OrderDoc): DemoOrder {
     vendorNote: o.vendorNote ?? undefined,
     paymentProofName: o.paymentProofName ?? undefined,
     paymentProofUrl: o.paymentProofUrl ?? undefined,
-    items: o.items.map((i) => ({
+    items: (o.items || []).map((i) => ({
       productId: i.productId ?? undefined,
       vendorId: i.vendorId ?? undefined,
       name: i.name,
@@ -36,7 +36,7 @@ export function toDemoOrder(o: OrderDoc): DemoOrder {
     adminNote: o.adminNote ?? undefined,
     cancelledBy: o.cancelledBy ?? undefined,
     cancellationReason: o.cancellationReason ?? undefined,
-    messages: o.messages.map((m) => ({
+    messages: (o.messages || []).map((m) => ({
       senderRole: m.senderRole,
       senderName: m.senderName,
       text: m.text,

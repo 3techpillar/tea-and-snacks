@@ -4,7 +4,7 @@
 export type {
   OrderStatus,
   OrderItem,
-  DemoOrder,
+  PublicOrder,
   AdminOrderView,
 } from "@tea-and-snacks/shared";
 

@@ -156,7 +156,7 @@ export type OrderMessage = {
   timestamp: string;
 };
 
-export type DemoOrder = {
+export type PublicOrder = {
   id: string;
   token: string;
   customer: string;
@@ -182,7 +182,7 @@ export type DemoOrder = {
 };
 
 /** Richer view used only by the admin dashboard. */
-export type AdminOrderView = DemoOrder & {
+export type AdminOrderView = PublicOrder & {
   statusUpdatedAt: string;
   lastVendorNotifiedAt?: string;
   isDelayed: boolean;

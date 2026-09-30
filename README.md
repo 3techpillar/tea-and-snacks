@@ -11,7 +11,7 @@ Customers can browse vendors, add items to a cart, place orders, and upload a UP
 This project is structured as an npm workspaces monorepo, decoupling the backend from the frontend while sharing types and constants.
 
 ### 1. `packages/shared`
-Single source of truth for TypeScript interfaces (e.g. `Product`, `Vendor`, `DemoOrder`) and domain constants. Both the frontend and backend import from here to ensure type safety across the network boundary.
+Single source of truth for TypeScript interfaces (e.g. `Product`, `Vendor`, `PublicOrder`) and domain constants. Both the frontend and backend import from here to ensure type safety across the network boundary.
 
 ### 2. `apps/backend`
 - **Framework**: Node.js + Express

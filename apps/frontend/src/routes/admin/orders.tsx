@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/api/admin";
 import { useState } from "react";
-import { statusToneClass, type DemoOrder } from "@/lib/orders";
+import { statusToneClass, type PublicOrder } from "@/lib/orders";
 import { DataTable, type ColumnDef } from "@/components/DataTable";
 
 export const Route = createFileRoute("/admin/orders")({
@@ -32,17 +32,13 @@ function AdminOrdersDashboard() {
     },
   });
 
-  const columns: ColumnDef<DemoOrder>[] = [
+  const columns: ColumnDef<PublicOrder>[] = [
     {
       header: "Token",
       className: "w-[80px] font-bold text-lg",
       accessorKey: "token",
     },
-    {
-      header: "Order ID",
-      className: "font-mono text-xs text-muted-foreground",
-      accessorKey: "id",
-    },
+
     {
       header: "Date",
       cell: (o) => (
@@ -88,19 +84,12 @@ function AdminOrdersDashboard() {
       header: "Actions",
       cell: (o) => (
         <div className="flex gap-2">
-          {o.status !== "Delivered" && o.status !== "Cancelled" && (
-            <button
-              onClick={() => {
-                if (confirm("Are you sure you want to FORCE CANCEL this order?")) {
-                  cancelMutation.mutate(o.id);
-                }
-              }}
-              disabled={cancelMutation.isPending}
-              className="text-xs font-medium text-destructive hover:underline disabled:opacity-50 disabled:hover:no-underline"
-            >
-              Cancel
-            </button>
-          )}
+          <Link
+            to={`/admin/orders/${o.id}`}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            View Details
+          </Link>
         </div>
       ),
     },

@@ -1,9 +1,9 @@
 import { apiClient } from "../api-client";
-import type { DemoOrder, OrderStatus } from "@tea-and-snacks/shared";
+import type { PublicOrder, OrderStatus } from "@tea-and-snacks/shared";
 
 export const vendorApi = {
   getOrders: (vendorId: string, status?: string, page?: number, limit?: number) =>
-    apiClient.get<{ data: DemoOrder[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
+    apiClient.get<{ data: PublicOrder[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
       `/api/vendor/${vendorId}/orders`,
       { params: { status, page, limit } }
     ),
@@ -17,23 +17,23 @@ export const vendorApi = {
     }>(`/api/vendor/${vendorId}/stats`),
 
   updateStatus: (vendorId: string, orderId: string, status: OrderStatus) =>
-    apiClient.patch<DemoOrder>(
+    apiClient.patch<PublicOrder>(
       `/api/vendor/${vendorId}/orders/${orderId}/status`,
       { status },
     ),
 
   confirmPayment: (vendorId: string, orderId: string) =>
-    apiClient.post<DemoOrder>(
+    apiClient.post<PublicOrder>(
       `/api/vendor/${vendorId}/orders/${orderId}/confirm-payment`,
     ),
 
   rejectPayment: (vendorId: string, orderId: string) =>
-    apiClient.post<DemoOrder>(
+    apiClient.post<PublicOrder>(
       `/api/vendor/${vendorId}/orders/${orderId}/reject-payment`,
     ),
 
   addNote: (vendorId: string, orderId: string, note: string) =>
-    apiClient.patch<DemoOrder>(
+    apiClient.patch<PublicOrder>(
       `/api/vendor/${vendorId}/orders/${orderId}/note`,
       { note },
     ),

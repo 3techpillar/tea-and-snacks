@@ -6,7 +6,7 @@ import {
   statusToneClass,
   vendorSlice,
   orderStatuses,
-  type DemoOrder,
+  type PublicOrder,
   type OrderStatus,
 } from "@/lib/orders";
 import { useOrderRoomUpdates, useIsSocketConnected } from "@/lib/realtime-client";
@@ -53,7 +53,7 @@ function VendorOrderCard({
   rejectMutation,
   noteMutation,
 }: {
-  order: DemoOrder;
+  order: PublicOrder;
   vendorId: string;
   onChat: () => void;
   onViewProof: () => void;
@@ -247,7 +247,7 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
   const page = search.page || 1;
   const limit = 50;
   
-  const [proof, setProof] = useState<DemoOrder | null>(null);
+  const [proof, setProof] = useState<PublicOrder | null>(null);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const isSocketConnected = useIsSocketConnected();
 

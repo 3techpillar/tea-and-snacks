@@ -7,6 +7,7 @@ import { hashPassword } from "../utils/password.util";
 import { generateOTP } from "../utils/otp.util";
 import { EmailService, EmailTemplates } from "../utils/email.util";
 import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
+import { toPublicOrder } from "../utils/orderMapper.util";
 
 export const AdminController = {
   // ── Orders ─────────────────────────────────────────────────────────────
@@ -27,10 +28,12 @@ export const AdminController = {
         }
       }
 
-      const [orders, total] = await Promise.all([
+      const [rawOrders, total] = await Promise.all([
         Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
         Order.countDocuments(query)
       ]);
+
+      const orders = rawOrders.map((o: any) => toPublicOrder(o));
 
       res.json({
         data: orders,

@@ -3,8 +3,8 @@ import { Order } from "../models/Order.model";
 import { Product } from "../models/Product.model";
 import { nextOrderNumber } from "../models/Counter.model";
 import { emitOrderUpdated } from "../realtime/socket";
-import { toDemoOrder } from "../utils/orderMapper.util";
-import type { PublicUser, DemoOrder, DeliveryAddress } from "@tea-and-snacks/shared";
+import { toPublicOrder } from "../utils/orderMapper.util";
+import type { PublicUser, PublicOrder, DeliveryAddress } from "@tea-and-snacks/shared";
 import { BUILDINGS } from "@tea-and-snacks/shared";
 import { sendToVendor, sendToAdmins, sendToUser } from "./notification.service";
 import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
@@ -22,7 +22,7 @@ export type PlaceOrderInput = {
 export async function placeOrder(
   data: PlaceOrderInput,
   user: PublicUser,
-): Promise<DemoOrder> {
+): Promise<PublicOrder> {
   await connectDB();
 
   // Prices/names/vendorIds always come from the DB, never the client, so a
@@ -118,19 +118,19 @@ export async function placeOrder(
     data: { type: "new_order", orderId: String(order.displayId) },
   });
 
-  return toDemoOrder(order);
+  return toPublicOrder(order);
 }
 
-export async function getOrders(user: PublicUser): Promise<DemoOrder[]> {
+export async function getOrders(user: PublicUser): Promise<PublicOrder[]> {
   await connectDB();
   const orders = await Order.find({ userId: user.id }).sort({ placedAt: -1 });
-  return orders.map(toDemoOrder);
+  return orders.map(toPublicOrder);
 }
 
 export async function getOrder(
   orderId: string,
   user: PublicUser,
-): Promise<DemoOrder | null> {
+): Promise<PublicOrder | null> {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
   if (!order) return null;
@@ -144,7 +144,7 @@ export async function getOrder(
   if (!isOwner && !isVendorOnOrder && user.role !== "admin") {
     throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
   }
-  return toDemoOrder(order);
+  return toPublicOrder(order);
 }
 
 export type UploadProofInput = {
@@ -156,7 +156,7 @@ export async function uploadPaymentProof(
   orderId: string,
   data: UploadProofInput,
   user: PublicUser,
-): Promise<DemoOrder> {
+): Promise<PublicOrder> {
   if (data.dataUrl.length > MAX_PROOF_BYTES * 1.4) {
     throw new Error(MESSAGES.SCREENSHOT_TOO_LARGE);
   }
@@ -172,7 +172,7 @@ export async function uploadPaymentProof(
   // Note: We no longer auto-confirm on upload. Vendor must manually confirm.
   await order.save();
 
-  const demoOrder = toDemoOrder(order);
+  const demoOrder = toPublicOrder(order);
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
   return demoOrder;
 }
@@ -190,7 +190,7 @@ function checkOrderAccess(order: any, user: PublicUser) {
   }
 }
 
-export async function addChatMessage(orderId: string, text: string, user: PublicUser): Promise<DemoOrder> {
+export async function addChatMessage(orderId: string, text: string, user: PublicUser): Promise<PublicOrder> {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
   if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
@@ -206,12 +206,12 @@ export async function addChatMessage(orderId: string, text: string, user: Public
 
   await order.save();
 
-  const demoOrder = toDemoOrder(order);
+  const demoOrder = toPublicOrder(order);
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
   return demoOrder;
 }
 
-export async function cancelOrder(orderId: string, reason: string | undefined, user: PublicUser): Promise<DemoOrder> {
+export async function cancelOrder(orderId: string, reason: string | undefined, user: PublicUser): Promise<PublicOrder> {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
   if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
@@ -255,7 +255,7 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
     });
   }
 
-  const demoOrder = toDemoOrder(order);
+  const demoOrder = toPublicOrder(order);
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
   return demoOrder;
 }

@@ -32,7 +32,7 @@ teaandS/
 
 ### `packages/shared`
 The `shared` package is critical for preventing drift between the frontend and backend. It exports:
-- **TypeScript Interfaces**: `User`, `Order`, `Vendor`, `Product`, etc.
+- **TypeScript Interfaces**: `User`, `PublicOrder`, `Vendor`, `Product`, etc.
 - **Zod Schemas**: Used by the backend to validate incoming payloads and by the frontend for form validation.
 - **Enums & Constants**: Order statuses (`Pending`, `Preparing`, `Ready`), Role definitions (`admin`, `vendor`, `customer`).
 
@@ -81,7 +81,7 @@ The system's most complex flow is the lifecycle of an order. Here is the step-by
 
 1. **Cart & Checkout**: The user builds a cart locally (Zustand). The cart logic enforces a single-vendor policy. Upon checkout, they upload a UPI payment screenshot.
 2. **API Request**: The frontend calls `POST /api/orders` via Axios. The payload includes customer details and the screenshot file (handled via Multer).
-3. **Database Creation**: The `OrderService` validates the stock and confirms all items belong to a single vendor. It calculates totals, saves the `Order` document in MongoDB with a status of `Pending`, and generates a daily Token number.
+3. **Database Creation**: The `OrderService` validates the stock and confirms all items belong to a single vendor. It calculates totals, saves the `Order` document in MongoDB with an initial status of `New`, and generates a daily Token number.
 4. **Realtime Broadcast**: 
    - `socket.io` emits a `new-order` event specifically to the "room" belonging to the target `vendorId`.
    - The Vendor's live dashboard instantly updates without a page refresh.
@@ -112,7 +112,7 @@ Easy Food relies on a highly secure JWT (JSON Web Token) approach utilizing Http
 The core Mongoose schemas mapped to MongoDB collections:
 
 - **Users**: Stores credentials, roles (`admin`, `vendor`, `customer`), and `fcmTokens` (array of devices for push notifications). If the user is a vendor, a `vendorId` field associates them with a specific stall.
-- **Vendors**: Stores the stall profile (name, emoji, description, UPI IDs, business status).
+- **Vendors**: Stores the stall profile (name, emoji, structured `location` (building, floor, stallNumber), UPI IDs, business status).
 - **Products**: Owned by a specific `vendorId`. Tracks price, availability (`isAvailable`), and tags (e.g., `veg`, `spicy`).
 - **Orders**: Contains embedded arrays of cart items. Tracks customer details, the target `vendorId`, the unique `token`, the `status` enum, and the S3/local URL of the uploaded UPI payment receipt.
 

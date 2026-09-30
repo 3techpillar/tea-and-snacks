@@ -1,4 +1,4 @@
-import type { OrderStatus, DemoOrder } from "./types";
+import type { OrderStatus, PublicOrder } from "./types";
 
 /** Progress track shown to the customer. */
 export const orderStatuses: OrderStatus[] = [
@@ -38,7 +38,7 @@ export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 };
 
 /** Items of an order belonging to one vendor, plus that vendor's subtotal. */
-export function vendorSlice(order: DemoOrder, vendorId: string) {
+export function vendorSlice(order: PublicOrder, vendorId: string) {
   const items = order.items.filter((i) => i.vendorId === vendorId);
   return { items, subtotal: items.reduce((s, i) => s + i.price * i.qty, 0) };
 }

@@ -30,6 +30,7 @@ import { Route as VendorIndexRouteImport } from "./routes/vendor/index"
 import { Route as VendorVendorIdRouteImport } from "./routes/vendor/$vendorId"
 import { Route as VendorsIndexRouteImport } from "./routes/vendors/index"
 import { Route as VendorsVendorIdRouteImport } from "./routes/vendors/$vendorId"
+import { Route as AdminOrdersOrderIdRouteImport } from "./routes/admin/orders_.$orderId"
 import { Route as AdminUsersUserIdRouteImport } from "./routes/admin/users_.$userId"
 import { Route as AdminVendorsIndexRouteImport } from "./routes/admin/vendors/index"
 import { Route as AdminVendorsVendorIdRouteImport } from "./routes/admin/vendors/$vendorId"
@@ -142,6 +143,11 @@ const VendorsVendorIdRoute = VendorsVendorIdRouteImport.update({
   path: "/vendors/$vendorId",
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOrdersOrderIdRoute = AdminOrdersOrderIdRouteImport.update({
+  id: "/orders_/$orderId",
+  path: "/orders/$orderId",
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersUserIdRoute = AdminUsersUserIdRouteImport.update({
   id: "/users_/$userId",
   path: "/users/$userId",
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   "/orders/": typeof OrdersIndexRoute
   "/vendor/": typeof VendorIndexRoute
   "/vendors/": typeof VendorsIndexRoute
+  "/admin/orders/$orderId": typeof AdminOrdersOrderIdRoute
   "/admin/users/$userId": typeof AdminUsersUserIdRoute
   "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
   "/admin/vendors/create": typeof AdminVendorsCreateRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   "/orders": typeof OrdersIndexRoute
   "/vendor": typeof VendorIndexRoute
   "/vendors": typeof VendorsIndexRoute
+  "/admin/orders/$orderId": typeof AdminOrdersOrderIdRoute
   "/admin/users/$userId": typeof AdminUsersUserIdRoute
   "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
   "/admin/vendors/create": typeof AdminVendorsCreateRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   "/orders/": typeof OrdersIndexRoute
   "/vendor/": typeof VendorIndexRoute
   "/vendors/": typeof VendorsIndexRoute
+  "/admin/orders_/$orderId": typeof AdminOrdersOrderIdRoute
   "/admin/users_/$userId": typeof AdminUsersUserIdRoute
   "/admin/vendors/$vendorId": typeof AdminVendorsVendorIdRoute
   "/admin/vendors/create": typeof AdminVendorsCreateRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | "/orders/"
     | "/vendor/"
     | "/vendors/"
+    | "/admin/orders/$orderId"
     | "/admin/users/$userId"
     | "/admin/vendors/$vendorId"
     | "/admin/vendors/create"
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | "/orders"
     | "/vendor"
     | "/vendors"
+    | "/admin/orders/$orderId"
     | "/admin/users/$userId"
     | "/admin/vendors/$vendorId"
     | "/admin/vendors/create"
@@ -343,6 +354,7 @@ export interface FileRouteTypes {
     | "/orders/"
     | "/vendor/"
     | "/vendors/"
+    | "/admin/orders_/$orderId"
     | "/admin/users_/$userId"
     | "/admin/vendors/$vendorId"
     | "/admin/vendors/create"
@@ -521,6 +533,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof VendorsVendorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/admin/orders_/$orderId": {
+      id: "/admin/orders_/$orderId"
+      path: "/orders/$orderId"
+      fullPath: "/admin/orders/$orderId"
+      preLoaderRoute: typeof AdminOrdersOrderIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     "/admin/users_/$userId": {
       id: "/admin/users_/$userId"
       path: "/users/$userId"
@@ -570,6 +589,7 @@ interface AdminRouteChildren {
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminOrdersOrderIdRoute: typeof AdminOrdersOrderIdRoute
   AdminUsersUserIdRoute: typeof AdminUsersUserIdRoute
   AdminVendorsVendorIdRoute: typeof AdminVendorsVendorIdRoute
   AdminVendorsCreateRoute: typeof AdminVendorsCreateRoute
@@ -580,6 +600,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminOrdersRoute: AdminOrdersRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminOrdersOrderIdRoute: AdminOrdersOrderIdRoute,
   AdminUsersUserIdRoute: AdminUsersUserIdRoute,
   AdminVendorsVendorIdRoute: AdminVendorsVendorIdRoute,
   AdminVendorsCreateRoute: AdminVendorsCreateRoute,
