@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import type { DemoOrder } from "@tea-and-snacks/shared";
+import type { PublicOrder } from "@tea-and-snacks/shared";
 import { Send } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api/orders";
 
 type OrderChatProps = {
-  order: DemoOrder;
+  order: PublicOrder;
   isVendor?: boolean;
-  onMessageSent?: (order: DemoOrder) => void;
+  onMessageSent?: (order: PublicOrder) => void;
 };
 
 export function OrderChat({ order, isVendor = false, onMessageSent }: OrderChatProps) {

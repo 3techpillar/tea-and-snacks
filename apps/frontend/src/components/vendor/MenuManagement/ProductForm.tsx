@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Upload, Loader2, Plus, Trash2 } from "lucide-react";
 import { vendorApi } from "@/lib/api/vendor";
+import { apiClient } from "@/lib/api-client";
 import type { ProductVariant } from "@tea-and-snacks/shared";
 import { VariantManager } from "./VariantManager";
 
@@ -107,15 +108,8 @@ export function ProductForm({
       if (file) {
         const formDataUpload = new FormData();
         formDataUpload.append("image", file);
-        const API_BASE = import.meta.env.VITE_API_URL ?? "";
-        const res = await fetch(`${API_BASE}/api/upload`, {
-          method: "POST",
-          body: formDataUpload,
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("Image upload failed");
-        const json = await res.json();
-        imageUrl = json.data?.imageUrl || json.imageUrl;
+        const json = await apiClient.post<any>("/api/upload", formDataUpload);
+        imageUrl = json.imageUrl || json.data?.imageUrl || json;
       }
 
       // Determine the base price. If variants exist, base price is the lowest variant price.

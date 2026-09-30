@@ -17,6 +17,7 @@ import {
 import type { PublicUser, TokenPair } from "@tea-and-snacks/shared";
 import { generateOTP } from "../utils/otp.util";
 import { EmailService, EmailTemplates } from "../utils/email.util";
+import { MESSAGES } from "../constants/messages";
 
 export type RegisterInput = {
   name: string;
@@ -65,11 +66,11 @@ export async function registerUser(
 
   if (data.role === "vendor") {
     if (!data.vendorId || !(await Vendor.exists({ _id: data.vendorId }))) {
-      throw new ValidationError("Pick a valid stall to manage.");
+      throw new ValidationError(MESSAGES.INVALID_STALL_SELECTION);
     }
     if (await User.exists({ vendorId: data.vendorId })) {
       throw new ConflictError(
-        "This stall already has a vendor account. Ask an admin to add staff.",
+        MESSAGES.STALL_ALREADY_CLAIMED,
       );
     }
   }
@@ -78,7 +79,7 @@ export async function registerUser(
   // For simplicity, we just check if verified user exists.
   let user = await User.findOne({ email: data.email });
   if (user && user.isVerified) {
-    throw new ConflictError("An account with this email already exists.");
+    throw new ConflictError(MESSAGES.EMAIL_ALREADY_EXISTS);
   }
 
   const otp = generateOTP();
@@ -115,18 +116,18 @@ export async function registerUser(
   EmailService.send(user.email, EmailTemplates.VerificationOTP(otp)).catch(console.error);
 
   if (user && !user.isVerified && user.createdAt.getTime() < Date.now() - 5000) {
-    return { message: "Check mail and verify the user mail to login", userId: String(user._id) };
+    return { message: MESSAGES.CHECK_MAIL_TO_VERIFY, userId: String(user._id) };
   }
 
-  return { message: "OTP sent to email", userId: String(user._id) };
+  return { message: MESSAGES.OTP_SENT, userId: String(user._id) };
 }
 
 export async function resendOTP(email: string): Promise<{ message: string }> {
   await connectDB();
   const user = await User.findOne({ email });
 
-  if (!user) throw new NotFoundError("User not found.");
-  if (user.isVerified) throw new ConflictError("Email is already verified.");
+  if (!user) throw new NotFoundError(MESSAGES.USER_NOT_FOUND);
+  if (user.isVerified) throw new ConflictError(MESSAGES.ALREADY_VERIFIED);
 
   const otp = generateOTP();
   user.otpCode = otp;
@@ -135,18 +136,18 @@ export async function resendOTP(email: string): Promise<{ message: string }> {
 
   EmailService.send(user.email, EmailTemplates.VerificationOTP(otp)).catch(console.error);
 
-  return { message: "A new OTP has been sent to your email." };
+  return { message: MESSAGES.OTP_SENT };
 }
 
 export async function verifyEmail(email: string, otp: string): Promise<{ user: PublicUser; tokens: TokenPair }> {
   await connectDB();
   const user = await User.findOne({ email });
 
-  if (!user) throw new NotFoundError("User not found.");
-  if (user.isVerified) throw new ConflictError("Email is already verified.");
+  if (!user) throw new NotFoundError(MESSAGES.USER_NOT_FOUND);
+  if (user.isVerified) throw new ConflictError(MESSAGES.ALREADY_VERIFIED);
   
   if (user.otpCode !== otp || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
-    throw new ValidationError("Invalid or expired OTP.");
+    throw new ValidationError(MESSAGES.INVALID_OTP);
   }
 
   user.isVerified = true;
@@ -168,15 +169,15 @@ export async function loginUser(
   const user = await User.findOne({ email: data.email });
 
   if (!user || !(await verifyPassword(data.password, user.passwordHash))) {
-    throw new UnauthorizedError("Invalid email or password.");
+    throw new UnauthorizedError(MESSAGES.INVALID_CREDENTIALS);
   }
 
   if (!user.isVerified) {
-    throw new UnauthorizedError("Please verify your email address first.");
+    throw new UnauthorizedError(MESSAGES.EMAIL_NOT_VERIFIED);
   }
 
   if (!user.isActive) {
-    throw new ForbiddenError("Your account has been deactivated. Contact support.");
+    throw new ForbiddenError(MESSAGES.ACCOUNT_DEACTIVATED);
   }
 
   user.lastLoginAt = new Date();
@@ -194,7 +195,7 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 
   if (!user || !user.isVerified || !user.isActive) {
     // Do not leak information, always return the same message
-    return { message: "If your email is registered and verified, you will receive an OTP shortly." };
+    return { message: MESSAGES.OTP_SENT_IF_REGISTERED };
   }
 
   const otp = generateOTP();
@@ -204,17 +205,17 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 
   EmailService.send(user.email, EmailTemplates.PasswordResetOTP(otp)).catch(console.error);
 
-  return { message: "If your email is registered and verified, you will receive an OTP shortly." };
+  return { message: MESSAGES.OTP_SENT_IF_REGISTERED };
 }
 
 export async function resetPassword(email: string, otp: string, newPassword: string): Promise<{ message: string }> {
   await connectDB();
   const user = await User.findOne({ email });
 
-  if (!user) throw new ValidationError("Invalid or expired OTP.");
+  if (!user) throw new ValidationError(MESSAGES.INVALID_OTP);
 
   if (user.otpCode !== otp || !user.otpExpiresAt || user.otpExpiresAt < new Date()) {
-    throw new ValidationError("Invalid or expired OTP.");
+    throw new ValidationError(MESSAGES.INVALID_OTP);
   }
 
   user.passwordHash = await hashPassword(newPassword);
@@ -226,7 +227,7 @@ export async function resetPassword(email: string, otp: string, newPassword: str
   
   await user.save();
 
-  return { message: "Password reset successful. You can now log in." };
+  return { message: MESSAGES.PASSWORD_RESET_SUCCESSFUL };
 }
 
 export async function refreshTokens(
@@ -234,22 +235,22 @@ export async function refreshTokens(
 ): Promise<{ user: PublicUser; tokens: TokenPair }> {
   const payload = verifyRefreshToken(currentRefreshToken);
   if (!payload) {
-    throw new UnauthorizedError("Invalid or expired refresh token.");
+    throw new UnauthorizedError(MESSAGES.INVALID_REFRESH_TOKEN);
   }
 
   await connectDB();
   const user = await User.findById(payload.sub);
 
   if (!user) {
-    throw new UnauthorizedError("User not found.");
+    throw new UnauthorizedError(MESSAGES.USER_NOT_FOUND);
   }
 
   if (!user.isActive) {
-    throw new ForbiddenError("Your account has been deactivated.");
+    throw new ForbiddenError(MESSAGES.ACCOUNT_DEACTIVATED);
   }
 
   if (user.tokenVersion !== payload.v) {
-    throw new UnauthorizedError("Token has been revoked. Please sign in again.");
+    throw new UnauthorizedError(MESSAGES.TOKEN_REVOKED);
   }
 
   if (
@@ -259,7 +260,7 @@ export async function refreshTokens(
     user.tokenVersion += 1;
     user.refreshTokenHash = undefined;
     await user.save();
-    throw new UnauthorizedError("Refresh token reuse detected. All sessions revoked.");
+    throw new UnauthorizedError(MESSAGES.TOKEN_REUSE_DETECTED);
   }
 
   const tokens = issueTokenPair(user);
@@ -276,11 +277,11 @@ export async function changePassword(
   await connectDB();
   const user = await User.findById(userId);
   if (!user) {
-    throw new UnauthorizedError("User not found.");
+    throw new UnauthorizedError(MESSAGES.USER_NOT_FOUND);
   }
 
   if (!(await verifyPassword(data.oldPassword, user.passwordHash))) {
-    throw new UnauthorizedError("Current password is incorrect.");
+    throw new UnauthorizedError(MESSAGES.INCORRECT_PASSWORD);
   }
 
   user.passwordHash = await hashPassword(data.newPassword);
@@ -294,22 +295,38 @@ export async function changePassword(
 
 export async function updateProfile(
   userId: string,
-  data: { name?: string; phone?: string },
+  data: { 
+    name?: string; 
+    phone?: string;
+    defaultAddress?: {
+      building: string;
+      floor: string;
+      officeNumber: string;
+    };
+  },
 ): Promise<{ user: PublicUser }> {
   await connectDB();
   const user = await User.findById(userId);
   if (!user) {
-    throw new UnauthorizedError("User not found.");
+    throw new UnauthorizedError(MESSAGES.USER_NOT_FOUND);
   }
 
   if (data.name !== undefined) {
     const trimmed = data.name.trim();
-    if (trimmed.length < 2) throw new ValidationError("Name is too short.");
+    if (trimmed.length < 2) throw new ValidationError(MESSAGES.NAME_TOO_SHORT);
     user.name = trimmed;
   }
   
   if (data.phone !== undefined) {
     user.phone = data.phone.trim();
+  }
+
+  if (data.defaultAddress !== undefined) {
+    user.defaultAddress = {
+      building: data.defaultAddress.building.trim(),
+      floor: data.defaultAddress.floor.trim(),
+      officeNumber: data.defaultAddress.officeNumber.trim(),
+    };
   }
 
   await user.save();

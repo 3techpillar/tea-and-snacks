@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "../config/env";
+import { MESSAGES } from "../constants/messages";
 
 export interface EmailTemplate {
   subject: string;
@@ -97,7 +98,7 @@ export const EmailService = {
     } catch (error) {
       console.error(`[EmailService] Failed to send email to ${to}:`, error);
       // In production, you might want to report this to an error tracking service (e.g. Sentry)
-      throw new Error("Failed to send email");
+      throw new Error(MESSAGES.FAILED_TO_SEND_EMAIL);
     }
   }
 };

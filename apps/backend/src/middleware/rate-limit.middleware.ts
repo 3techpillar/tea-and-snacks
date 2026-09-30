@@ -1,4 +1,5 @@
 import rateLimit from "express-rate-limit";
+import { MESSAGES } from "../constants/messages";
 
 export const authLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
@@ -9,7 +10,7 @@ export const authLimiter = rateLimit({
     success: false,
     error: {
       code: "TOO_MANY_REQUESTS",
-      message: "Too many attempts. Please try again later.",
+      message: MESSAGES.TOO_MANY_ATTEMPTS,
     },
   },
 });
@@ -23,7 +24,7 @@ export const apiLimiter = rateLimit({
     success: false,
     error: {
       code: "TOO_MANY_REQUESTS",
-      message: "Too many requests. Please try again later.",
+      message: MESSAGES.TOO_MANY_REQUESTS,
     },
   },
 });

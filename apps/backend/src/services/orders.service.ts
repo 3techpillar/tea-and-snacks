@@ -3,9 +3,11 @@ import { Order } from "../models/Order.model";
 import { Product } from "../models/Product.model";
 import { nextOrderNumber } from "../models/Counter.model";
 import { emitOrderUpdated } from "../realtime/socket";
-import { toDemoOrder } from "../utils/orderMapper.util";
-import type { PublicUser, DemoOrder } from "@tea-and-snacks/shared";
+import { toPublicOrder } from "../utils/orderMapper.util";
+import type { PublicUser, PublicOrder, DeliveryAddress } from "@tea-and-snacks/shared";
+import { BUILDINGS } from "@tea-and-snacks/shared";
 import { sendToVendor, sendToAdmins, sendToUser } from "./notification.service";
+import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -13,13 +15,14 @@ export type PlaceOrderInput = {
   customerName: string;
   customerPhone: string;
   paymentMethod: "online" | "offline";
+  deliveryAddress: DeliveryAddress;
   items: { productId: string; variantId?: string; qty: number }[];
 };
 
 export async function placeOrder(
   data: PlaceOrderInput,
   user: PublicUser,
-): Promise<DemoOrder> {
+): Promise<PublicOrder> {
   await connectDB();
 
   // Prices/names/vendorIds always come from the DB, never the client, so a
@@ -32,11 +35,11 @@ export async function placeOrder(
   const items = data.items.map(({ productId, variantId, qty }) => {
     const product = byId.get(productId) as any;
     if (!product)
-      throw new Error(`Product ${productId} is no longer available.`);
+      throw new Error(DYNAMIC_MESSAGES.PRODUCT_NO_LONGER_AVAILABLE(productId));
 
     const isOrderable = product.status === "available" || (!product.status && product.isAvailable !== false);
     if (!isOrderable) {
-      throw new Error(`Product "${product.name}" is currently unavailable for order.`);
+      throw new Error(DYNAMIC_MESSAGES.PRODUCT_UNAVAILABLE_FOR_ORDER(product.name));
     }
 
     let price = product.price;
@@ -61,7 +64,23 @@ export async function placeOrder(
       price,
     };
   });
+
+  const uniqueVendorIdsForValidation = new Set(items.map((i) => i.vendorId).filter(Boolean));
+  if (uniqueVendorIdsForValidation.size > 1) {
+    throw new Error(MESSAGES.SINGLE_VENDOR_ORDER_ONLY);
+  }
+
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  // ── Validate delivery address ─────────────────────────────────────
+  const addr = data.deliveryAddress;
+  if (!addr) throw new Error(MESSAGES.MISSING_DELIVERY_ADDRESS);
+  if (!BUILDINGS.some((b) => b.id === addr.building)) {
+    throw new Error(MESSAGES.INVALID_BUILDING);
+  }
+  if (!addr.floor?.trim()) throw new Error(MESSAGES.MISSING_FLOOR);
+  if (!addr.officeNumber?.trim()) throw new Error(MESSAGES.MISSING_OFFICE_NUMBER);
+  if (!addr.recipientPhone?.trim()) throw new Error(MESSAGES.MISSING_RECIPIENT_PHONE);
 
   const orderNumber = await nextOrderNumber();
   const order = await Order.create({
@@ -71,6 +90,13 @@ export async function placeOrder(
     customerName: data.customerName,
     customerPhone: data.customerPhone,
     paymentMethod: data.paymentMethod,
+    deliveryAddress: {
+      building: addr.building,
+      floor: addr.floor.trim(),
+      officeNumber: addr.officeNumber.trim(),
+      recipientName: addr.recipientName?.trim() || data.customerName,
+      recipientPhone: addr.recipientPhone.trim(),
+    },
     items,
     total,
   });
@@ -92,19 +118,19 @@ export async function placeOrder(
     data: { type: "new_order", orderId: String(order.displayId) },
   });
 
-  return toDemoOrder(order);
+  return toPublicOrder(order);
 }
 
-export async function getOrders(user: PublicUser): Promise<DemoOrder[]> {
+export async function getOrders(user: PublicUser): Promise<PublicOrder[]> {
   await connectDB();
   const orders = await Order.find({ userId: user.id }).sort({ placedAt: -1 });
-  return orders.map(toDemoOrder);
+  return orders.map(toPublicOrder);
 }
 
 export async function getOrder(
   orderId: string,
   user: PublicUser,
-): Promise<DemoOrder | null> {
+): Promise<PublicOrder | null> {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
   if (!order) return null;
@@ -116,9 +142,9 @@ export async function getOrder(
       (i: { vendorId?: string }) => i.vendorId === user.vendorId,
     );
   if (!isOwner && !isVendorOnOrder && user.role !== "admin") {
-    throw new Error("You don't have access to this order.");
+    throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
   }
-  return toDemoOrder(order);
+  return toPublicOrder(order);
 }
 
 export type UploadProofInput = {
@@ -130,15 +156,15 @@ export async function uploadPaymentProof(
   orderId: string,
   data: UploadProofInput,
   user: PublicUser,
-): Promise<DemoOrder> {
+): Promise<PublicOrder> {
   if (data.dataUrl.length > MAX_PROOF_BYTES * 1.4) {
-    throw new Error("Screenshot is too large (max 5MB).");
+    throw new Error(MESSAGES.SCREENSHOT_TOO_LARGE);
   }
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
-  if (!order) throw new Error("Order not found.");
+  if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
   if (String(order.userId) !== user.id)
-    throw new Error("You don't have access to this order.");
+    throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
 
   order.paymentProofName = data.fileName;
   order.paymentProofUrl = data.dataUrl;
@@ -146,7 +172,7 @@ export async function uploadPaymentProof(
   // Note: We no longer auto-confirm on upload. Vendor must manually confirm.
   await order.save();
 
-  const demoOrder = toDemoOrder(order);
+  const demoOrder = toPublicOrder(order);
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
   return demoOrder;
 }
@@ -155,19 +181,19 @@ function checkOrderAccess(order: any, user: PublicUser) {
   if (user.role === "admin") return;
   if (user.role === "customer") {
     if (String(order.userId) !== user.id) {
-      throw new Error("You don't have access to this order.");
+      throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
     }
   } else if (user.role === "vendor") {
     if (!order.items.some((i: any) => i.vendorId === user.vendorId)) {
-      throw new Error("You don't have access to this order.");
+      throw new Error(MESSAGES.UNAUTHORIZED_ORDER_ACCESS);
     }
   }
 }
 
-export async function addChatMessage(orderId: string, text: string, user: PublicUser): Promise<DemoOrder> {
+export async function addChatMessage(orderId: string, text: string, user: PublicUser): Promise<PublicOrder> {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
-  if (!order) throw new Error("Order not found.");
+  if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
 
   checkOrderAccess(order, user);
 
@@ -180,24 +206,24 @@ export async function addChatMessage(orderId: string, text: string, user: Public
 
   await order.save();
 
-  const demoOrder = toDemoOrder(order);
+  const demoOrder = toPublicOrder(order);
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
   return demoOrder;
 }
 
-export async function cancelOrder(orderId: string, reason: string | undefined, user: PublicUser): Promise<DemoOrder> {
+export async function cancelOrder(orderId: string, reason: string | undefined, user: PublicUser): Promise<PublicOrder> {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
-  if (!order) throw new Error("Order not found.");
+  if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
 
   checkOrderAccess(order, user);
 
   if (order.status === "Cancelled" || order.status === "Delivered" || order.status === "Rejected") {
-    throw new Error(`Order is already ${order.status}`);
+    throw new Error(DYNAMIC_MESSAGES.ORDER_IS_ALREADY(order.status));
   }
 
   if (user.role === "customer" && order.status !== "New") {
-    throw new Error("Customers can only cancel orders when they are New.");
+    throw new Error(MESSAGES.CANT_CANCEL_IN_PROGRESS_ORDER);
   }
 
   order.status = "Cancelled";
@@ -229,7 +255,7 @@ export async function cancelOrder(orderId: string, reason: string | undefined, u
     });
   }
 
-  const demoOrder = toDemoOrder(order);
+  const demoOrder = toPublicOrder(order);
   emitOrderUpdated({ id: demoOrder.id, items: demoOrder.items });
   return demoOrder;
 }

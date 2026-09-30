@@ -3,12 +3,18 @@ import { requireVendorAccess } from "../middleware/auth.middleware";
 import * as vendorService from "../services/vendor.service";
 import { Product } from "../models/Product.model";
 import { NotFoundError, ValidationError } from "../utils/errors";
+import { MESSAGES } from "../constants/messages";
 
 export async function getOrders(req: Request, res: Response, next: NextFunction) {
   try {
     const vendorId = req.params.vendorId as string;
+    const status = req.query.status as string | undefined;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    
     requireVendorAccess(req.user, vendorId);
-    const orders = await vendorService.getVendorOrders(vendorId);
+    
+    const orders = await vendorService.getVendorOrders(vendorId, status, page, limit);
     res.json(orders);
   } catch (err) {
     next(err);
@@ -97,7 +103,7 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
     
     const { id, name, price, emoji, veg, tag, imageUrl, isAvailable, status, prepTime, hasVariants, variantLabel, variants } = req.body;
     if (!id || !name || price === undefined) {
-      throw new ValidationError("ID, Name, and Price are required.");
+      throw new ValidationError(MESSAGES.MISSING_PRODUCT_DETAILS);
     }
 
     // Auto-generate backend-oriented ID using vendor stall ID to avoid collisions
@@ -105,7 +111,7 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
 
     const existing = await Product.findById(productId);
     if (existing) {
-      throw new ValidationError("Product with this ID already exists for this stall.");
+      throw new ValidationError(MESSAGES.PRODUCT_ALREADY_EXISTS);
     }
 
     const isQuickDelivery = prepTime === 10;
@@ -130,7 +136,7 @@ export async function updateProduct(req: Request, res: Response, next: NextFunct
 
     const product = await Product.findOne({ _id: productId, vendorId });
     if (!product) {
-      throw new NotFoundError("Product not found or doesn't belong to your stall.");
+      throw new NotFoundError(MESSAGES.PRODUCT_NOT_FOUND);
     }
 
     if (req.body.prepTime !== undefined) {
@@ -152,12 +158,12 @@ export async function deleteProduct(req: Request, res: Response, next: NextFunct
 
     const product = await Product.findOne({ _id: productId, vendorId });
     if (!product) {
-      throw new NotFoundError("Product not found or doesn't belong to your stall.");
+      throw new NotFoundError(MESSAGES.PRODUCT_NOT_FOUND);
     }
 
     // Instead of fully deleting, we deactivate it so old orders don't break
     await Product.findByIdAndUpdate(productId, { isActive: false });
-    res.json({ message: "Product deleted (deactivated)." });
+    res.json({ message: MESSAGES.PRODUCT_DELETED });
   } catch (err) {
     next(err);
   }
@@ -174,16 +180,17 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
     
     const vendor = await Vendor.findById(vendorId);
     if (!vendor) {
-      throw new NotFoundError("Stall not found");
+      throw new NotFoundError(MESSAGES.STALL_NOT_FOUND);
     }
 
-    const { tagline, counter, hours, upiId, isAcceptingOrders } = req.body;
+    const { tagline, hours, upiId, isAcceptingOrders, location } = req.body;
     
     if (tagline !== undefined) vendor.tagline = tagline;
-    if (counter !== undefined) vendor.counter = counter;
+
     if (hours !== undefined) vendor.hours = hours;
     if (upiId !== undefined) vendor.upiId = upiId;
     if (isAcceptingOrders !== undefined) vendor.isAcceptingOrders = isAcceptingOrders;
+    if (location !== undefined) vendor.location = location;
 
     await vendor.save();
     res.json(vendor);

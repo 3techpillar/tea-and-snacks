@@ -1,4 +1,9 @@
 import hero from "@/assets/hero-foodcourt.jpg";
+import heroTeaSnacks from "@/assets/hero-tea-snacks.jpg";
+import heroNonveg from "@/assets/hero-nonveg.jpg";
+import heroFastfood from "@/assets/hero-fastfood.jpg";
+import butterPaneer from "@/assets/butter-paneer.jpg";
+
 import vendorTeaPoint from "@/assets/vendor-tea-point.jpg";
 import vendorSnackShack from "@/assets/vendor-snack-shack.jpg";
 import vendorGreenBowl from "@/assets/vendor-green-bowl.jpg";
@@ -14,7 +19,6 @@ import saltedFries from "@/assets/salted-fries.jpg";
 import caesarSalad from "@/assets/caesar-salad.jpg";
 import paneerWrap from "@/assets/paneer-wrap.jpg";
 import fruitBowl from "@/assets/fruit-bowl.jpg";
-import butterPaneer from "@/assets/butter-paneer.jpg";
 import tandooriRoti from "@/assets/tandoori-roti.jpg";
 import chickenBiryani from "@/assets/chicken-biryani.jpg";
 import vegMomos from "@/assets/veg-momos.jpg";
@@ -24,6 +28,12 @@ import chocolateShake from "@/assets/chocolate-shake.jpg";
 import redVelvetSlice from "@/assets/red-velvet-slice.jpg";
 
 export const heroImage = hero;
+export const heroImages = [
+  heroTeaSnacks,
+  butterPaneer,
+  heroNonveg,
+  heroFastfood
+];
 
 export const vendorImages: Record<string, string> = {
   "tea-point": vendorTeaPoint,

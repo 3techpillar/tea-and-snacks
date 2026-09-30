@@ -19,6 +19,11 @@ export type UserDoc = HydratedDocument<{
   lastLoginAt?: Date;
   refreshTokenHash?: string;
   fcmDevices?: { token: string; deviceId: string; lastActive: Date }[];
+  defaultAddress?: {
+    building: string;
+    floor: string;
+    officeNumber: string;
+  };
 }>;
 
 const userSchema = new Schema(
@@ -54,6 +59,11 @@ const userSchema = new Schema(
         lastActive: { type: Date, default: Date.now },
       },
     ],
+    defaultAddress: {
+      building: { type: String, trim: true },
+      floor: { type: String, trim: true },
+      officeNumber: { type: String, trim: true },
+    },
   },
   { timestamps: true },
 );
@@ -69,6 +79,7 @@ export function toPublicUser(user: UserDoc) {
     role: user.role,
     vendorId: user.vendorId ?? undefined,
     isActive: user.isActive,
+    defaultAddress: user.defaultAddress ?? undefined,
   };
 }
 

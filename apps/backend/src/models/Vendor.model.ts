@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 const { Schema, model, models } = mongoose;
+import { BUILDINGS } from "@tea-and-snacks/shared";
 
 // _id is the human-readable slug (e.g. "tea-point") rather than an ObjectId,
 // so it matches the ids the frontend already uses in URLs and cart/order
@@ -18,7 +19,6 @@ const vendorSchema = new Schema(
       required: true,
     },
     tagline: { type: String, required: true },
-    counter: { type: String, required: true },
     hours: { type: String, required: true },
     specialty: { type: String, required: true },
     upiId: { type: String, required: true },
@@ -26,6 +26,11 @@ const vendorSchema = new Schema(
     imageUrl: { type: String },
     isActive: { type: Boolean, default: true },
     isAcceptingOrders: { type: Boolean, default: true },
+    location: {
+      building: { type: String, enum: BUILDINGS.map(b => b.id) },
+      floor:    { type: String },
+      stallNumber: { type: String },
+    },
   },
   { timestamps: true, _id: false },
 );

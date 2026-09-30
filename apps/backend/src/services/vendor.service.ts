@@ -1,42 +1,71 @@
 import { connectDB } from "../config/db";
 import { Order, type OrderDoc, type OrderStatus } from "../models/Order.model";
 import { emitOrderUpdated } from "../realtime/socket";
-import { toDemoOrder } from "../utils/orderMapper.util";
+import { toPublicOrder } from "../utils/orderMapper.util";
 import { vendorSlice, ALLOWED_TRANSITIONS } from "@tea-and-snacks/shared";
-import type { DemoOrder } from "@tea-and-snacks/shared";
+import type { PublicOrder } from "@tea-and-snacks/shared";
 import { sendToUser } from "./notification.service";
+import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
 
 /** Loads the order and 403s unless it actually contains an item for this vendor. */
 async function loadOrderForVendor(orderId: string, vendorId: string) {
   await connectDB();
   const order = await Order.findOne({ displayId: orderId });
-  if (!order) throw new Error("Order not found.");
+  if (!order) throw new Error(MESSAGES.ORDER_NOT_FOUND);
   if (
     !order.items.some((i: { vendorId?: string }) => i.vendorId === vendorId)
   ) {
-    throw new Error("This order doesn't include any of your items.");
+    throw new Error(MESSAGES.ORDER_NOT_FOR_YOUR_STALL);
   }
   return order;
 }
 
-function broadcast(order: OrderDoc): DemoOrder {
-  const demo = toDemoOrder(order);
+function broadcast(order: OrderDoc): PublicOrder {
+  const demo = toPublicOrder(order);
   emitOrderUpdated({ id: demo.id, items: demo.items });
   return demo;
 }
 
-export async function getVendorOrders(vendorId: string): Promise<DemoOrder[]> {
+export async function getVendorOrders(
+  vendorId: string,
+  status?: string,
+  page: number = 1,
+  limit: number = 50
+): Promise<{ data: PublicOrder[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
   await connectDB();
-  const orders = await Order.find({ "items.vendorId": vendorId }).sort({
-    placedAt: -1,
-  });
-  return orders.map(toDemoOrder);
+  
+  const query: any = { "items.vendorId": vendorId };
+  
+  if (status && status !== "All") {
+    if (status === "Live") {
+      query.status = { $nin: ["Delivered", "Cancelled", "Rejected"] };
+    } else {
+      query.status = status;
+    }
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [orders, total] = await Promise.all([
+    Order.find(query).sort({ placedAt: -1 }).skip(skip).limit(limit),
+    Order.countDocuments(query)
+  ]);
+
+  return {
+    data: orders.map(toPublicOrder),
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  };
 }
 
 export async function getVendorStats(vendorId: string) {
   await connectDB();
   const orders = await Order.find({ "items.vendorId": vendorId });
-  const demoOrders = orders.map(toDemoOrder);
+  const demoOrders = orders.map(toPublicOrder);
   const live = demoOrders.filter(
     (o) => o.status !== "Delivered" && o.status !== "Cancelled" && o.status !== "Rejected",
   );
@@ -57,7 +86,7 @@ export async function updateOrderStatus(
   vendorId: string,
   orderId: string,
   status: OrderStatus,
-): Promise<DemoOrder> {
+): Promise<PublicOrder> {
   const order = await loadOrderForVendor(orderId, vendorId);
 
   const from = order.status as OrderStatus;
@@ -65,10 +94,10 @@ export async function updateOrderStatus(
     from !== status &&
     !ALLOWED_TRANSITIONS[from].includes(status)
   ) {
-    throw new Error(`Can't move an order from ${from} to ${status}.`);
+    throw new Error(DYNAMIC_MESSAGES.CANT_MOVE_ORDER(from, status));
   }
   if (status === "Delivered" && !order.paymentConfirmed) {
-    throw new Error("Confirm payment before marking the order Delivered.");
+    throw new Error(MESSAGES.PAYMENT_NOT_CONFIRMED);
   }
 
   order.status = status;
@@ -87,7 +116,7 @@ export async function updateOrderStatus(
 export async function confirmPayment(
   vendorId: string,
   orderId: string,
-): Promise<DemoOrder> {
+): Promise<PublicOrder> {
   const order = await loadOrderForVendor(orderId, vendorId);
   order.paymentConfirmed = true;
   order.paymentRejected = false;
@@ -98,7 +127,7 @@ export async function confirmPayment(
 export async function rejectPayment(
   vendorId: string,
   orderId: string,
-): Promise<DemoOrder> {
+): Promise<PublicOrder> {
   const order = await loadOrderForVendor(orderId, vendorId);
   order.paymentConfirmed = false;
   order.paymentRejected = true;
@@ -110,7 +139,7 @@ export async function addVendorNote(
   vendorId: string,
   orderId: string,
   note: string,
-): Promise<DemoOrder> {
+): Promise<PublicOrder> {
   const order = await loadOrderForVendor(orderId, vendorId);
   order.vendorNote = note;
   await order.save();

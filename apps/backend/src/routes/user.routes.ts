@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { authMiddleware, requireUser } from "../middleware/auth.middleware";
 import { User } from "../models/User.model";
+import { MESSAGES } from "../constants/messages";
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.post("/fcm-token", async (req: Request, res: Response, next: NextFunction
     const userObj = requireUser(req.user);
     const { token, deviceId } = req.body;
     if (!token || !deviceId) {
-      res.status(400).json({ error: "token and deviceId are required" });
+      res.status(400).json({ error: MESSAGES.TOKEN_AND_DEVICE_ID_REQUIRED });
       return;
     }
 
@@ -27,7 +28,7 @@ router.post("/fcm-token", async (req: Request, res: Response, next: NextFunction
     // Now, update or push this device to the current user
     const user = await User.findById(userId);
     if (!user) {
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({ error: MESSAGES.USER_NOT_FOUND });
       return;
     }
 
@@ -44,10 +45,10 @@ router.post("/fcm-token", async (req: Request, res: Response, next: NextFunction
     }
 
     await user.save();
-    res.json({ message: "Token registered successfully" });
+    res.json({ message: MESSAGES.TOKEN_REGISTERED });
   } catch (err) {
     console.error("Error registering FCM token:", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: MESSAGES.INTERNAL_SERVER_ERROR });
   }
 });
 
@@ -63,10 +64,10 @@ router.delete("/fcm-token/:deviceId", async (req: Request, res: Response, next: 
       { $pull: { fcmDevices: { deviceId } } }
     );
 
-    res.json({ message: "Token unregistered successfully" });
+    res.json({ message: MESSAGES.TOKEN_UNREGISTERED });
   } catch (err) {
     console.error("Error unregistering FCM token:", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: MESSAGES.INTERNAL_SERVER_ERROR });
   }
 });
 

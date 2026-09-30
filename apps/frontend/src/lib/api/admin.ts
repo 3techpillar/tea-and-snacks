@@ -1,12 +1,12 @@
 import { apiClient } from "../api-client";
-import { type DemoOrder } from "../orders";
+import { type PublicOrder } from "../orders";
 import type { Vendor, AdminUserView, PaginatedResponse } from "@tea-and-snacks/shared";
 
 export const adminApi = {
   getOrders: (page = 1, limit = 20, status = "Live") => 
-    apiClient.get<PaginatedResponse<DemoOrder>>(`/api/admin/orders?page=${page}&limit=${limit}&status=${status}`),
+    apiClient.get<PaginatedResponse<PublicOrder>>(`/api/admin/orders?page=${page}&limit=${limit}&status=${status}`),
   cancelOrder: (orderId: string, reason?: string) =>
-    apiClient.put<{ message: string; order: DemoOrder }>(`/api/admin/orders/${orderId}/cancel`, { reason }),
+    apiClient.put<{ message: string; order: PublicOrder }>(`/api/admin/orders/${orderId}/cancel`, { reason }),
 
   // Vendors
   getVendors: (page = 1, limit = 20) => 

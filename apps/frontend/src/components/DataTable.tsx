@@ -16,6 +16,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Loader } from "@/components/Loader";
 
 export type ColumnDef<T> = {
   header: string | React.ReactNode;
@@ -127,8 +128,8 @@ export function DataTable<T>({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Loading...
+                <TableCell colSpan={columns.length} className="h-24">
+                  <Loader text="Loading data..." />
                 </TableCell>
               </TableRow>
             ) : data.length === 0 ? (

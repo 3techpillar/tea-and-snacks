@@ -13,6 +13,7 @@ import { AuthProvider } from "@/lib/auth-client";
 import { catalogQueryOptions } from "@/lib/catalog-client";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
+import { Footer } from "@/components/Footer";
 
 function NotFoundComponent() {
   return (
@@ -119,18 +120,21 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { location } = useRouterState();
   const isAuthRoute = ["/login", "/register", "/forgot-password"].includes(location.pathname);
+  const isDashboardRoute = location.pathname.startsWith("/admin") || location.pathname === "/vendor" || location.pathname.startsWith("/vendor/");
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <NotificationInitializer />
         <CartProvider>
-          {isAuthRoute ? (
+          {isAuthRoute || isDashboardRoute ? (
             <div className="flex h-screen flex-col overflow-hidden bg-background">
-              <div className="lg:hidden">
-                <Header />
-              </div>
-              <main className="relative flex-1 overflow-hidden">
+              {(isAuthRoute || isDashboardRoute) && (
+                <div className="md:hidden">
+                  <Header />
+                </div>
+              )}
+              <main className="relative flex-1 overflow-y-auto">
                 <Outlet />
               </main>
             </div>
@@ -140,9 +144,7 @@ function RootComponent() {
               <main className="flex-1 pb-16 sm:pb-0">
                 <Outlet />
               </main>
-              <footer className="border-t border-border pb-20 pt-8 text-center text-sm text-muted-foreground sm:pb-8">
-                Easy Food · demo build, backed by MongoDB
-              </footer>
+              <Footer />
               <BottomNav />
             </div>
           )}

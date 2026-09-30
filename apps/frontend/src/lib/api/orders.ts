@@ -1,24 +1,26 @@
 import { apiClient } from "../api-client";
-import type { DemoOrder } from "@tea-and-snacks/shared";
+import type { PublicOrder, DeliveryAddress } from "@tea-and-snacks/shared";
 
 export const ordersApi = {
   place: (data: {
     customerName: string;
     customerPhone: string;
-    items: { productId: string; qty: number }[];
-  }) => apiClient.post<DemoOrder>("/api/orders", data),
+    paymentMethod: "online" | "offline";
+    deliveryAddress: DeliveryAddress;
+    items: { productId: string; variantId?: string; qty: number }[];
+  }) => apiClient.post<PublicOrder>("/api/orders", data),
 
-  list: () => apiClient.get<DemoOrder[]>("/api/orders"),
+  list: () => apiClient.get<PublicOrder[]>("/api/orders"),
 
   getById: (orderId: string) =>
-    apiClient.get<DemoOrder | null>(`/api/orders/${orderId}`),
+    apiClient.get<PublicOrder | null>(`/api/orders/${orderId}`),
 
   uploadProof: (orderId: string, data: { fileName: string; dataUrl: string }) =>
-    apiClient.post<DemoOrder>(`/api/orders/${orderId}/proof`, data),
+    apiClient.post<PublicOrder>(`/api/orders/${orderId}/proof`, data),
 
   addChatMessage: (orderId: string, text: string) =>
-    apiClient.post<DemoOrder>(`/api/orders/${orderId}/chat`, { text }),
+    apiClient.post<PublicOrder>(`/api/orders/${orderId}/chat`, { text }),
 
   cancelOrder: (orderId: string, reason?: string) =>
-    apiClient.post<DemoOrder>(`/api/orders/${orderId}/cancel`, { reason }),
+    apiClient.post<PublicOrder>(`/api/orders/${orderId}/cancel`, { reason }),
 };

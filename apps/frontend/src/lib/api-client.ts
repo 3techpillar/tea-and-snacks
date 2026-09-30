@@ -1,134 +1,77 @@
+import axios from "axios";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-type ApiOptions = {
-  method?: string;
-  body?: unknown;
-  headers?: Record<string, string>;
-  _skipRefresh?: boolean;
-};
+const axiosInstance = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true,
+});
 
 let isRefreshing = false;
-let refreshQueue: Array<{
-  resolve: () => void;
-  reject: (err: Error) => void;
-}> = [];
+let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (err: any) => void }> = [];
 
-function onRefreshSuccess() {
-  refreshQueue.forEach(({ resolve }) => resolve());
-  refreshQueue = [];
-}
+const processQueue = (error: Error | null) => {
+  failedQueue.forEach(prom => {
+    if (error) prom.reject(error);
+    else prom.resolve();
+  });
+  failedQueue = [];
+};
 
-function onRefreshFailure(err: Error) {
-  refreshQueue.forEach(({ reject }) => reject(err));
-  refreshQueue = [];
-}
+axiosInstance.interceptors.response.use(
+  (response) => {
+    // Automatically unpack your standard API response structure
+    const data = response.data;
+    if (data && typeof data === "object" && "success" in data && data.data !== undefined) {
+      return data.data;
+    }
+    return data;
+  },
+  async (error) => {
+    const originalRequest = error.config;
 
-async function doRefresh(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
+    // Format the error nicely before throwing
+    const formattedError = new Error(
+      error.response?.data?.error?.message || 
+      error.response?.data?.message || 
+      "Something went wrong."
+    );
+    (formattedError as any).status = error.response?.status;
+    (formattedError as any).code = error.response?.data?.error?.code || "UNKNOWN_ERROR";
 
-async function request<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const { method = "GET", body, headers = {}, _skipRefresh = false } = options;
+    // Handle 401 Unauthorized for token refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        }).then(() => {
+          return axiosInstance(originalRequest);
+        }).catch(err => Promise.reject(err));
+      }
 
-  const fetchOptions: RequestInit = {
-    method,
-    credentials: "include",
-    headers: { ...headers },
-  };
-
-  if (body !== undefined) {
-    fetchOptions.headers = {
-      ...fetchOptions.headers,
-      "Content-Type": "application/json",
-    };
-    fetchOptions.body = JSON.stringify(body);
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, fetchOptions);
-
-  if (res.status === 401 && !_skipRefresh) {
-    let refreshed = false;
-
-    if (!isRefreshing) {
+      originalRequest._retry = true;
       isRefreshing = true;
+
       try {
-        refreshed = await doRefresh();
-        if (refreshed) {
-          onRefreshSuccess();
-        } else {
-          onRefreshFailure(new Error("Session expired"));
-        }
+        await axios.post(`${API_BASE}/api/auth/refresh`, {}, { withCredentials: true });
+        processQueue(null);
+        return axiosInstance(originalRequest);
       } catch (err) {
-        onRefreshFailure(err as Error);
+        processQueue(err as Error);
+        return Promise.reject(formattedError);
       } finally {
         isRefreshing = false;
       }
-    } else {
-      try {
-        await new Promise<void>((resolve, reject) => {
-          refreshQueue.push({ resolve, reject });
-        });
-        refreshed = true;
-      } catch {
-        refreshed = false;
-      }
     }
 
-    if (refreshed) {
-      return request<T>(path, { ...options, _skipRefresh: true });
-    }
-
-    const err = new Error("Session expired. Please sign in again.");
-    (err as any).code = "SESSION_EXPIRED";
-    (err as any).status = 401;
-    throw err;
+    return Promise.reject(formattedError);
   }
-
-  if (!res.ok) {
-    let message = "Something went wrong.";
-    let code = "UNKNOWN_ERROR";
-    try {
-      const data = await res.json();
-      if (data.error?.message) {
-        message = data.error.message;
-        code = data.error.code ?? code;
-      } else if (data.message) {
-        message = data.message;
-      }
-    } catch {
-    }
-    const err = new Error(message);
-    (err as any).code = code;
-    (err as any).status = res.status;
-    throw err;
-  }
-
-  if (res.status === 204) return undefined as T;
-
-  const json = await res.json();
-
-  if (json && typeof json === "object" && "success" in json && json.data !== undefined) {
-    return json.data as T;
-  }
-
-  return json as T;
-}
+);
 
 export const apiClient = {
-  get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: "POST", body }),
-  patch: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: "PATCH", body }),
-  put: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: "PUT", body }),
-  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  get: <T>(path: string, config?: import("axios").AxiosRequestConfig) => axiosInstance.get<any, T>(path, config),
+  post: <T>(path: string, body?: unknown, config?: import("axios").AxiosRequestConfig) => axiosInstance.post<any, T>(path, body, config),
+  patch: <T>(path: string, body?: unknown) => axiosInstance.patch<any, T>(path, body),
+  put: <T>(path: string, body?: unknown) => axiosInstance.put<any, T>(path, body),
+  delete: <T>(path: string) => axiosInstance.delete<any, T>(path),
 };

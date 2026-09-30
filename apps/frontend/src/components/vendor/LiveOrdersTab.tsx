@@ -1,19 +1,24 @@
 import { useState, useMemo } from "react";
+import { useNavigate, getRouteApi } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { vendorApi } from "@/lib/api/vendor";
 import {
   statusToneClass,
   vendorSlice,
   orderStatuses,
-  type DemoOrder,
+  type PublicOrder,
   type OrderStatus,
 } from "@/lib/orders";
 import { useOrderRoomUpdates, useIsSocketConnected } from "@/lib/realtime-client";
 import { OrderChat } from "@/components/OrderChat";
+import { Loader } from "@/components/Loader";
+import { BUILDINGS } from "@tea-and-snacks/shared";
+import { Phone, MapPin } from "lucide-react";
 
 const filters = ["New", "Accepted", "Preparing", "Out for Delivery", "Delivered", "All"] as const;
 type Filter = (typeof filters)[number];
-const EMPTY_ORDERS: DemoOrder[] = [];
+
+const routeApi = getRouteApi("/vendor/$vendorId");
 
 function VendorNoteInput({ value, onSave }: { value: string; onSave: (note: string) => void }) {
   const [draft, setDraft] = useState(value);
@@ -48,7 +53,7 @@ function VendorOrderCard({
   rejectMutation,
   noteMutation,
 }: {
-  order: DemoOrder;
+  order: PublicOrder;
   vendorId: string;
   onChat: () => void;
   onViewProof: () => void;
@@ -61,10 +66,7 @@ function VendorOrderCard({
   const slice = vendorSlice(o, vendorId);
   
   return (
-    <article className="surface-card p-5 shadow-sm hover:shadow-md transition-shadow border border-border/40 overflow-hidden relative">
-      {/* Accent bar for unread/new status */}
-      {o.status === "New" && <div className="absolute left-0 top-0 bottom-0 w-1 bg-mango" />}
-      
+    <article className="surface-card p-5 shadow-sm hover:shadow-md transition-shadow border border-border/40">
       <div className="flex flex-wrap items-center gap-3">
         <span className="rounded-xl bg-secondary/80 px-3 py-1 font-display text-lg font-bold shadow-sm">
           {o.token}
@@ -73,9 +75,17 @@ function VendorOrderCard({
           <p className="truncate font-bold text-lg leading-tight">
             #{o.id} <span className="font-medium text-muted-foreground mx-1">·</span> {o.customer}
           </p>
-          <p className="text-xs text-muted-foreground font-medium mt-0.5">
-            {o.phone} <span className="mx-1">·</span> {new Date(o.placedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
+          <div className="flex items-center gap-2 text-xs font-medium mt-1">
+            <a 
+              href={`tel:${o.phone}`}
+              className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-primary hover:bg-primary/20 transition-colors"
+            >
+              <Phone className="h-3 w-3" />
+              {o.phone}
+            </a>
+            <span className="text-muted-foreground">·</span> 
+            <span className="text-muted-foreground">{new Date(o.placedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -91,6 +101,21 @@ function VendorOrderCard({
           </span>
         </div>
       </div>
+
+      {o.deliveryAddress && (
+        <div className="mt-4 rounded-xl bg-primary/5 border border-primary/20 p-3.5 text-sm shadow-sm">
+          <p className="font-bold flex items-center gap-1.5 text-primary/80 mb-1.5">
+            <MapPin className="h-4 w-4" /> Delivery Address
+          </p>
+          <p className="text-foreground font-semibold pl-5.5 flex flex-wrap items-center gap-y-1">
+            <span>{BUILDINGS.find((b) => b.id === o.deliveryAddress!.building)?.name ?? o.deliveryAddress.building}</span>
+            <span className="opacity-40 mx-2 font-black">·</span>
+            <span>Floor {o.deliveryAddress.floor}</span>
+            <span className="opacity-40 mx-2 font-black">·</span>
+            <span>Office {o.deliveryAddress.officeNumber}</span>
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 space-y-2 text-sm">
         {slice.items.map((i, idx) => (
@@ -215,28 +240,41 @@ function VendorOrderCard({
 
 export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAccess: boolean }) {
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<Filter>("New");
-  const [proof, setProof] = useState<DemoOrder | null>(null);
+  const navigate = routeApi.useNavigate();
+  const search = routeApi.useSearch();
+  
+  const filter = (search.status as Filter) || "New";
+  const page = search.page || 1;
+  const limit = 50;
+  
+  const [proof, setProof] = useState<PublicOrder | null>(null);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const isSocketConnected = useIsSocketConnected();
 
-  const queryKey = ["vendor-orders", vendorId] as const;
+  const queryKey = ["vendor-orders", vendorId, filter, page] as const;
 
   const ordersQuery = useQuery({
     queryKey,
-    queryFn: () => vendorApi.getOrders(vendorId),
+    queryFn: () => vendorApi.getOrders(vendorId, filter, page, limit),
     enabled: hasAccess,
     refetchInterval: isSocketConnected ? false : 15_000,
   });
 
-  useOrderRoomUpdates(hasAccess ? `vendor:${vendorId}` : undefined, () =>
-    queryClient.invalidateQueries({ queryKey }),
-  );
+  const statsQuery = useQuery({
+    queryKey: ["vendor-stats", vendorId],
+    queryFn: () => vendorApi.getStats(vendorId),
+    enabled: hasAccess,
+    refetchInterval: isSocketConnected ? false : 15_000,
+  });
 
-  const onMutationSuccess = (order: DemoOrder) => {
-    queryClient.setQueryData(queryKey, (prev: DemoOrder[] | undefined) =>
-      (prev ?? []).map((o) => (o.id === order.id ? order : o)),
-    );
+  useOrderRoomUpdates(hasAccess ? `vendor:${vendorId}` : undefined, () => {
+    queryClient.invalidateQueries({ queryKey: ["vendor-orders", vendorId] });
+    queryClient.invalidateQueries({ queryKey: ["vendor-stats", vendorId] });
+  });
+
+  const onMutationSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["vendor-orders", vendorId] });
+    queryClient.invalidateQueries({ queryKey: ["vendor-stats", vendorId] });
   };
 
   const statusMutation = useMutation({
@@ -258,31 +296,24 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
     onSuccess: onMutationSuccess,
   });
 
-  const orders = ordersQuery.data ?? EMPTY_ORDERS;
+  const orders = ordersQuery.data?.data ?? [];
+  const meta = ordersQuery.data?.meta;
   const chatOrder = chatOrderId ? orders.find((o) => o.id === chatOrderId) || null : null;
 
-  const stats = useMemo(() => {
-    const live = orders.filter((o) => o.status !== "Delivered" && o.status !== "Cancelled" && o.status !== "Rejected");
-    const earned = orders
-      .filter((o) => o.paymentConfirmed && o.status !== "Cancelled" && o.status !== "Rejected")
-      .reduce((s, o) => s + vendorSlice(o, vendorId).subtotal, 0);
-    return {
-      live: live.length,
-      pending: orders.filter((o) => o.status === "New").length,
-      awaitingPay: orders.filter((o) => !o.paymentConfirmed && o.status !== "Cancelled").length,
-      earned,
-    };
-  }, [orders, vendorId]);
-
-  const visible = orders.filter((o) => {
-    if (filter === "All") return true;
-    return o.status === filter;
-  });
+  const stats = statsQuery.data ?? { live: 0, pending: 0, awaitingPay: 0, earned: 0 };
 
   const patchStatus = (id: string, status: OrderStatus) =>
     statusMutation.mutate({ orderId: id, status });
   const mutationError =
     [statusMutation, confirmMutation, rejectMutation].find((m) => m.isError)?.error ?? undefined;
+    
+  const handleFilterChange = (f: Filter) => {
+    navigate({ search: { ...search, status: f, page: 1 } });
+  };
+  
+  const handlePageChange = (newPage: number) => {
+    navigate({ search: { ...search, page: newPage } });
+  };
 
   return (
     <>
@@ -307,7 +338,7 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
         {filters.map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            onClick={() => handleFilterChange(f)}
             className={`shrink-0 rounded-full px-5 py-2 text-sm font-semibold transition-all active:scale-95 ${
               filter === f ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background" : "bg-secondary text-foreground hover:bg-secondary/80"
             }`}
@@ -318,12 +349,12 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
       </div>
 
       {ordersQuery.isLoading ? (
-        <p className="mt-8 text-muted-foreground">Loading orders…</p>
-      ) : visible.length === 0 ? (
+        <Loader text="Loading orders..." className="mt-12" />
+      ) : orders.length === 0 ? (
         <p className="mt-8 text-muted-foreground">No orders in this view yet.</p>
       ) : (
         <div className="mt-5 grid gap-4">
-          {visible.map((o) => (
+          {orders.map((o) => (
             <VendorOrderCard
               key={o.id}
               order={o}
@@ -337,6 +368,28 @@ export function LiveOrdersTab({ vendorId, hasAccess }: { vendorId: string; hasAc
               noteMutation={noteMutation}
             />
           ))}
+          
+          {meta && meta.totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <button
+                disabled={page <= 1}
+                onClick={() => handlePageChange(page - 1)}
+                className="rounded-full bg-secondary px-4 py-2 text-sm font-semibold hover:bg-secondary/80 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm font-medium">
+                Page {page} of {meta.totalPages}
+              </span>
+              <button
+                disabled={page >= meta.totalPages}
+                onClick={() => handlePageChange(page + 1)}
+                className="rounded-full bg-secondary px-4 py-2 text-sm font-semibold hover:bg-secondary/80 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
 

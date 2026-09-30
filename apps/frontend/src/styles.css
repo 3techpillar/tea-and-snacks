@@ -151,22 +151,17 @@
   --sidebar-border: oklch(0.9 0.02 80);
   --sidebar-ring: var(--primary);
 
-  --gradient-hero: linear-gradient(
-    135deg,
-    var(--mango) 0%,
-    var(--chili) 45%,
-    var(--berry) 100%
-  );
-  --gradient-rainbow: linear-gradient(
-    90deg,
-    var(--chili),
-    var(--mango),
-    var(--mint),
-    var(--sky),
-    var(--grape)
-  );
-  --shadow-pop: 0 14px 34px -18px
-    color-mix(in oklab, var(--chili) 55%, transparent);
+  --gradient-hero: linear-gradient(135deg,
+      var(--mango) 0%,
+      var(--chili) 45%,
+      var(--berry) 100%);
+  --gradient-rainbow: linear-gradient(90deg,
+      var(--chili),
+      var(--mango),
+      var(--mint),
+      var(--sky),
+      var(--grape));
+  --shadow-pop: 0 14px 34px -18px color-mix(in oklab, var(--chili) 55%, transparent);
 }
 
 .dark {
@@ -247,12 +242,10 @@
 }
 
 @utility media-overlay {
-  background-image: linear-gradient(
-    to top,
-    color-mix(in oklab, black 78%, transparent) 0%,
-    color-mix(in oklab, black 25%, transparent) 45%,
-    transparent 100%
-  );
+  background-image: linear-gradient(to top,
+      color-mix(in oklab, black 78%, transparent) 0%,
+      color-mix(in oklab, black 25%, transparent) 45%,
+      transparent 100%);
 }
 
 @utility safe-bottom {
@@ -261,6 +254,7 @@
 
 @utility no-scrollbar {
   scrollbar-width: none;
+
   &::-webkit-scrollbar {
     display: none;
   }
@@ -268,16 +262,12 @@
 
 @utility gradient-mesh {
   background-image:
-    radial-gradient(
-      120% 80% at 0% 0%,
+    radial-gradient(120% 80% at 0% 0%,
       color-mix(in oklab, var(--mango) 55%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      100% 80% at 100% 0%,
+      transparent 60%),
+    radial-gradient(100% 80% at 100% 0%,
       color-mix(in oklab, var(--berry) 50%, transparent),
-      transparent 60%
-    ),
+      transparent 60%),
     linear-gradient(160deg, var(--chili), var(--grape));
 }
 
@@ -296,6 +286,7 @@
       opacity: 0;
       transform: translateY(12px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -459,3 +450,33 @@
   }
 }
 
+@keyframes hero-scroll {
+
+  0%,
+  20% {
+    transform: translateX(0);
+  }
+
+  25%,
+  45% {
+    transform: translateX(-100%);
+  }
+
+  50%,
+  70% {
+    transform: translateX(-200%);
+  }
+
+  75%,
+  95% {
+    transform: translateX(-300%);
+  }
+
+  100% {
+    transform: translateX(-400%);
+  }
+}
+
+@utility animate-hero-scroll {
+  animation: hero-scroll 20s infinite;
+}

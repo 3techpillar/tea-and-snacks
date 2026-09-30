@@ -23,6 +23,11 @@ export type ChangePasswordInput = {
 export type UpdateProfileInput = {
   name?: string;
   phone?: string;
+  defaultAddress?: {
+    building: string;
+    floor: string;
+    officeNumber: string;
+  };
 };
 
 type AuthData = { user: PublicUser };

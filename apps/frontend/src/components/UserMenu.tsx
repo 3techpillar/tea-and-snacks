@@ -1,5 +1,5 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { User, LogOut, LayoutDashboard, ShieldCheck, Store } from "lucide-react";
 import { useAuth } from "@/lib/auth-client";
 
@@ -17,6 +17,7 @@ const menuItemClass =
 
 export function UserMenu() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
@@ -89,7 +90,10 @@ export function UserMenu() {
 
           {/* Sign out */}
           <DropdownMenu.Item
-            onClick={() => logout()}
+            onClick={async () => {
+              await logout();
+              navigate({ to: "/" });
+            }}
             className="relative flex cursor-pointer select-none items-center rounded-md px-2 py-2 text-sm outline-none transition-colors hover:bg-destructive/10 focus:bg-destructive/10 hover:text-destructive focus:text-destructive data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
           >
             <LogOut className="mr-2 h-4 w-4" />

@@ -6,6 +6,8 @@ import { NotFoundError, ValidationError } from "../utils/errors";
 import { hashPassword } from "../utils/password.util";
 import { generateOTP } from "../utils/otp.util";
 import { EmailService, EmailTemplates } from "../utils/email.util";
+import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
+import { toPublicOrder } from "../utils/orderMapper.util";
 
 export const AdminController = {
   // ── Orders ─────────────────────────────────────────────────────────────
@@ -26,10 +28,12 @@ export const AdminController = {
         }
       }
 
-      const [orders, total] = await Promise.all([
+      const [rawOrders, total] = await Promise.all([
         Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
         Order.countDocuments(query)
       ]);
+
+      const orders = rawOrders.map((o: any) => toPublicOrder(o));
 
       res.json({
         data: orders,
@@ -50,10 +54,10 @@ export const AdminController = {
       const { id } = req.params;
       const order = await Order.findById(id);
 
-      if (!order) throw new NotFoundError("Order not found");
+      if (!order) throw new NotFoundError(MESSAGES.ORDER_NOT_FOUND);
 
       if (order.status === "Delivered" || order.status === "Cancelled" || order.status === "Rejected") {
-        throw new ValidationError(`Order is already ${order.status}`);
+        throw new ValidationError(DYNAMIC_MESSAGES.ORDER_IS_ALREADY(order.status));
       }
 
       order.status = "Cancelled";
@@ -64,7 +68,7 @@ export const AdminController = {
 
       // TODO: Emit socket event to vendor and customer here!
 
-      res.json({ message: "Order forcefully cancelled", order });
+      res.json({ message: MESSAGES.ORDER_FORCEFULLY_CANCELLED, order });
     } catch (err) {
       next(err);
     }
@@ -101,22 +105,22 @@ export const AdminController = {
     try {
       const {
         id, name, cuisine, emoji, rating, eta, accent,
-        tagline, counter, hours, specialty, upiId, highlights,
+        tagline, location, hours, specialty, upiId, highlights,
         imageUrl, isAcceptingOrders, ownerEmail, ownerMobile
       } = req.body;
 
-      if (!id || !name || !ownerEmail || !ownerMobile) throw new ValidationError("Vendor ID, Name, Owner Email, and Owner Mobile are required");
+      if (!id || !name || !ownerEmail || !ownerMobile) throw new ValidationError(MESSAGES.MISSING_VENDOR_DETAILS);
 
       const existingUser = await User.findOne({ email: ownerEmail });
-      if (existingUser) throw new ValidationError("An account with this email already exists");
+      if (existingUser) throw new ValidationError(MESSAGES.EMAIL_ALREADY_EXISTS);
 
       const existing = await Vendor.findById(id);
-      if (existing) throw new ValidationError("Vendor with this ID already exists");
+      if (existing) throw new ValidationError(MESSAGES.VENDOR_ALREADY_EXISTS);
 
       const vendor = await Vendor.create({
         _id: id,
         name, cuisine, emoji, rating: rating || 5.0, eta, accent,
-        tagline, counter, hours, specialty, upiId, highlights,
+        tagline, location, hours, specialty, upiId, highlights,
         imageUrl, isAcceptingOrders
       });
 
@@ -141,7 +145,7 @@ export const AdminController = {
       EmailService.send(ownerEmail, EmailTemplates.VerificationOTP(otp)).catch(console.error);
 
       res.status(201).json({
-        message: "Vendor stall created. OTP sent for verification.",
+        message: MESSAGES.VENDOR_CREATED_OTP_SENT,
         requiresOtp: true,
         email: ownerEmail,
         vendor
@@ -155,15 +159,15 @@ export const AdminController = {
     try {
       const { email, otp } = req.body;
       const user = await User.findOne({ email, role: "vendor" });
-      if (!user) throw new NotFoundError("Vendor account not found");
+      if (!user) throw new NotFoundError(MESSAGES.VENDOR_NOT_FOUND);
 
       if (user.isVerified) {
-        return res.json({ message: "Vendor already verified", defaultAccount: { email, password: "vendor123" } });
+        return res.json({ message: MESSAGES.ALREADY_VERIFIED, defaultAccount: { email, password: "vendor123" } });
       }
 
-      if (user.otpCode !== otp) throw new ValidationError("Invalid OTP");
+      if (user.otpCode !== otp) throw new ValidationError(MESSAGES.INVALID_OTP);
       if (user.otpExpiresAt && user.otpExpiresAt.getTime() < Date.now()) {
-        throw new ValidationError("OTP has expired. Please request a new one.");
+        throw new ValidationError(MESSAGES.OTP_EXPIRED);
       }
 
       user.isVerified = true;
@@ -173,7 +177,7 @@ export const AdminController = {
       await user.save();
 
       res.json({
-        message: "Vendor verified successfully",
+        message: MESSAGES.VENDOR_VERIFIED_SUCCESSFULLY,
         defaultAccount: { email, password: "vendor123" }
       });
     } catch (err) {
@@ -185,8 +189,8 @@ export const AdminController = {
     try {
       const { email } = req.body;
       const user = await User.findOne({ email, role: "vendor" });
-      if (!user) throw new NotFoundError("Vendor account not found");
-      if (user.isVerified) throw new ValidationError("Vendor is already verified");
+      if (!user) throw new NotFoundError(MESSAGES.VENDOR_NOT_FOUND);
+      if (user.isVerified) throw new ValidationError(MESSAGES.ALREADY_VERIFIED);
 
       const otp = generateOTP();
       user.otpCode = otp;
@@ -195,7 +199,7 @@ export const AdminController = {
 
       EmailService.send(user.email, EmailTemplates.VerificationOTP(otp)).catch(console.error);
 
-      res.json({ message: "OTP resent successfully" });
+      res.json({ message: MESSAGES.OTP_RESENT_SUCCESSFULLY });
     } catch (err) {
       next(err);
     }
@@ -205,8 +209,8 @@ export const AdminController = {
     try {
       const { id } = req.params;
       const vendor = await Vendor.findByIdAndUpdate(id, req.body, { new: true });
-      if (!vendor) throw new NotFoundError("Vendor not found");
-      res.json({ message: "Vendor updated", vendor });
+      if (!vendor) throw new NotFoundError(MESSAGES.VENDOR_NOT_FOUND);
+      res.json({ message: MESSAGES.VENDOR_UPDATED, vendor });
     } catch (err) {
       next(err);
     }
@@ -216,12 +220,12 @@ export const AdminController = {
     try {
       const { id } = req.params;
       const vendor = await Vendor.findByIdAndUpdate(id, { isActive: false }, { new: true });
-      if (!vendor) throw new NotFoundError("Vendor not found");
+      if (!vendor) throw new NotFoundError(MESSAGES.VENDOR_NOT_FOUND);
 
       // Deactivate all staff accounts for this vendor
       await User.updateMany({ vendorId: id }, { isActive: false });
 
-      res.json({ message: "Vendor deactivated successfully" });
+      res.json({ message: MESSAGES.VENDOR_DEACTIVATED_SUCCESSFULLY });
     } catch (err) {
       next(err);
     }
@@ -283,7 +287,7 @@ export const AdminController = {
       const { id } = req.params;
       const user = await User.findById(id).select("-passwordHash -otpCode").lean();
       
-      if (!user) throw new NotFoundError("User not found");
+      if (!user) throw new NotFoundError(MESSAGES.USER_NOT_FOUND);
       
       const { _id, ...rest } = user as any;
       res.json({ id: _id.toString(), ...rest });

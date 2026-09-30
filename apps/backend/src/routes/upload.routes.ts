@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { authMiddleware, requireUser } from "../middleware/auth.middleware";
 import { ValidationError } from "../utils/errors";
+import { MESSAGES } from "../constants/messages";
 
 const router = Router();
 
@@ -32,7 +33,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new ValidationError("Invalid file type. Only JPG, PNG, WEBP, and GIF are allowed."));
+    cb(new ValidationError(MESSAGES.INVALID_FILE_TYPE));
   }
 };
 
@@ -51,7 +52,7 @@ router.post("/", authMiddleware, upload.single("image"), (req: Request, res: Res
   try {
     requireUser(req.user);
     if (!req.file) {
-      throw new ValidationError("No image file provided");
+      throw new ValidationError(MESSAGES.NO_IMAGE_PROVIDED);
     }
 
     // Since we'll configure Express to serve the 'public' directory at the root,
@@ -59,7 +60,7 @@ router.post("/", authMiddleware, upload.single("image"), (req: Request, res: Res
     const imageUrl = `/uploads/${req.file.filename}`;
 
     res.status(201).json({
-      message: "Image uploaded successfully",
+      message: MESSAGES.IMAGE_UPLOADED,
       imageUrl
     });
   } catch (error) {

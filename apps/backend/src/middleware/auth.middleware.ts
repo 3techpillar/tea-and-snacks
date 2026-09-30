@@ -8,6 +8,7 @@ import {
   type Permission,
   type UserRole,
 } from "@tea-and-snacks/shared";
+import { MESSAGES } from "../constants/messages";
 
 const ACCESS_COOKIE = "easy_food_access";
 
@@ -62,7 +63,7 @@ export async function authMiddleware(
 
 export function requireUser(user: PublicUser | null | undefined): PublicUser {
   if (!user)
-    throw new UnauthorizedError("You need to sign in first.");
+    throw new UnauthorizedError(MESSAGES.UNAUTHORIZED);
   return user;
 }
 
@@ -71,7 +72,7 @@ export function requirePermission(...permissions: Permission[]) {
     const user = requireUser(req.user);
     if (!hasPermission(user.role as UserRole, ...permissions)) {
       throw new ForbiddenError(
-        "You do not have permission to perform this action.",
+        MESSAGES.FORBIDDEN,
       );
     }
     next();
@@ -83,7 +84,7 @@ export function requireVendor(
 ): PublicUser & { vendorId: string } {
   const u = requireUser(user);
   if (u.role !== "vendor" || !u.vendorId) {
-    throw new ForbiddenError("This action is vendor-only.");
+    throw new ForbiddenError(MESSAGES.VENDOR_ONLY_ACTION);
   }
   return u as PublicUser & { vendorId: string };
 }
@@ -95,13 +96,13 @@ export function requireVendorAccess(
   const u = requireUser(user);
   if (u.role === "admin") return u;
   if (u.role === "vendor" && u.vendorId === vendorId) return u;
-  throw new ForbiddenError("You can only manage your own stall.");
+  throw new ForbiddenError(MESSAGES.UNAUTHORIZED_STALL_ACCESS);
 }
 
 export function requireAdmin(user: PublicUser | null | undefined): PublicUser {
   const u = requireUser(user);
   if (u.role !== "admin") {
-    throw new ForbiddenError("This action is admin-only.");
+    throw new ForbiddenError(MESSAGES.ADMIN_ONLY_ACTION);
   }
   return u;
 }
