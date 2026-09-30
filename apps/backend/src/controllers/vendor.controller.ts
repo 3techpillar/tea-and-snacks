@@ -183,13 +183,14 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
       throw new NotFoundError(MESSAGES.STALL_NOT_FOUND);
     }
 
-    const { tagline, counter, hours, upiId, isAcceptingOrders } = req.body;
+    const { tagline, hours, upiId, isAcceptingOrders, location } = req.body;
     
     if (tagline !== undefined) vendor.tagline = tagline;
-    if (counter !== undefined) vendor.counter = counter;
+
     if (hours !== undefined) vendor.hours = hours;
     if (upiId !== undefined) vendor.upiId = upiId;
     if (isAcceptingOrders !== undefined) vendor.isAcceptingOrders = isAcceptingOrders;
+    if (location !== undefined) vendor.location = location;
 
     await vendor.save();
     res.json(vendor);

@@ -44,6 +44,13 @@ export type OrderDoc = HydratedDocument<{
   adminNote?: string;
   lastVendorNotifiedAt?: Date;
   messages: OrderMessageDoc[];
+  deliveryAddress?: {
+    building: string;
+    floor: string;
+    officeNumber: string;
+    recipientName: string;
+    recipientPhone: string;
+  };
   cancelledBy?: "customer" | "vendor" | "admin";
   cancellationReason?: string;
 }>;
@@ -114,6 +121,13 @@ const orderSchema = new Schema(
     adminNote: String,
     lastVendorNotifiedAt: Date,
     messages: { type: [orderMessageSchema], default: [] },
+    deliveryAddress: {
+      building:       { type: String },
+      floor:          { type: String },
+      officeNumber:   { type: String },
+      recipientName:  { type: String },
+      recipientPhone: { type: String },
+    },
     cancelledBy: { type: String, enum: ["customer", "vendor", "admin"] },
     cancellationReason: String,
   },

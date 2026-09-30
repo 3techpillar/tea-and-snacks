@@ -295,7 +295,15 @@ export async function changePassword(
 
 export async function updateProfile(
   userId: string,
-  data: { name?: string; phone?: string },
+  data: { 
+    name?: string; 
+    phone?: string;
+    defaultAddress?: {
+      building: string;
+      floor: string;
+      officeNumber: string;
+    };
+  },
 ): Promise<{ user: PublicUser }> {
   await connectDB();
   const user = await User.findById(userId);
@@ -311,6 +319,14 @@ export async function updateProfile(
   
   if (data.phone !== undefined) {
     user.phone = data.phone.trim();
+  }
+
+  if (data.defaultAddress !== undefined) {
+    user.defaultAddress = {
+      building: data.defaultAddress.building.trim(),
+      floor: data.defaultAddress.floor.trim(),
+      officeNumber: data.defaultAddress.officeNumber.trim(),
+    };
   }
 
   await user.save();

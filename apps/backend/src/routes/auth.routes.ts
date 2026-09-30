@@ -67,6 +67,11 @@ router.post(
 const updateProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").optional(),
   phone: z.string().optional(),
+  defaultAddress: z.object({
+    building: z.string().min(1),
+    floor: z.string().min(1),
+    officeNumber: z.string().min(1),
+  }).optional(),
 });
 
 router.patch(

@@ -2,7 +2,7 @@ import { connectDB } from "../config/db";
 import { Vendor } from "../models/Vendor.model";
 import { Product } from "../models/Product.model";
 import { Offer } from "../models/Offer.model";
-import type { Catalog, Vendor as VendorDTO, Product as ProductDTO, Offer as OfferDTO } from "@tea-and-snacks/shared";
+import type { Catalog, Vendor as VendorDTO, Product as ProductDTO, Offer as OfferDTO, BuildingId } from "@tea-and-snacks/shared";
 
 /** Single combined fetch so the whole app can prefetch/cache the catalog in one round trip. */
 export async function getCatalog(): Promise<Catalog> {
@@ -23,12 +23,16 @@ export async function getCatalog(): Promise<Catalog> {
       eta: v.eta,
       accent: v.accent as VendorDTO["accent"],
       tagline: v.tagline,
-      counter: v.counter,
       hours: v.hours,
       specialty: v.specialty,
       upiId: v.upiId,
       highlights: v.highlights ?? [],
       imageUrl: v.imageUrl,
+      location: v.location ? {
+        building: v.location.building as BuildingId | undefined,
+        floor: v.location.floor,
+        stallNumber: v.location.stallNumber,
+      } : undefined,
     })),
     products: productDocs.map((p) => ({
       id: p._id as unknown as string,

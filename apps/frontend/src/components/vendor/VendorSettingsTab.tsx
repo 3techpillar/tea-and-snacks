@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 import { vendorApi } from "@/lib/api/vendor";
+import { BUILDINGS, type BuildingId } from "@tea-and-snacks/shared";
 
 export function VendorSettingsTab({
   vendorId,
@@ -11,12 +12,19 @@ export function VendorSettingsTab({
   vendor: Record<string, unknown>;
 }) {
   const queryClient = useQueryClient();
+  const initialLoc = (vendor.location as any) || {};
+  
   const [formData, setFormData] = useState({
     tagline: (vendor.tagline as string) || "",
     counter: (vendor.counter as string) || "",
     hours: (vendor.hours as string) || "",
     upiId: (vendor.upiId as string) || "",
     isAcceptingOrders: vendor.isAcceptingOrders !== false,
+    location: {
+      building: (initialLoc.building as BuildingId) || "",
+      floor: initialLoc.floor || "",
+      stallNumber: initialLoc.stallNumber || "",
+    }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -74,17 +82,50 @@ export function VendorSettingsTab({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="pt-4 border-t border-border/50 space-y-4">
+            <h4 className="font-semibold text-sm flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" /> Stall Location
+            </h4>
+            
             <div className="space-y-2">
-              <label className="text-sm font-semibold">Location / Counter</label>
-              <input
-                required
-                value={formData.counter}
-                onChange={(e) => setFormData({ ...formData, counter: e.target.value })}
+              <label className="text-sm font-medium">Building</label>
+              <select
+                value={formData.location.building}
+                onChange={(e) => setFormData({ ...formData, location: { ...formData.location, building: e.target.value as BuildingId } })}
                 className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="e.g. Ground Floor, Block A"
-              />
+              >
+                <option value="">Select a building</option>
+                {BUILDINGS.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Floor</label>
+                <input
+                  required
+                  value={formData.location.floor}
+                  onChange={(e) => setFormData({ ...formData, location: { ...formData.location, floor: e.target.value } })}
+                  className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="e.g. Ground Floor"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Stall Number</label>
+                <input
+                  required
+                  value={formData.location.stallNumber}
+                  onChange={(e) => setFormData({ ...formData, location: { ...formData.location, stallNumber: e.target.value } })}
+                  className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="e.g. 104"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-border/50 space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold">Operating Hours</label>
               <input

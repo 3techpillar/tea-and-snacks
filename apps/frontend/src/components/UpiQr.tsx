@@ -32,7 +32,7 @@ export function UpiQr({
         <p className="truncate font-semibold">
           {vendor.emoji} {vendor.name}
         </p>
-        <p className="text-sm text-muted-foreground">{vendor.counter}</p>
+        <p className="text-sm text-muted-foreground">{vendor.location?.stallNumber ? `Stall ${vendor.location.stallNumber}` : "Stall TBD"}</p>
         <p className="mt-1 truncate text-sm font-medium">{vendor.upiId}</p>
         <span
           className={`mt-2 inline-block rounded-full px-3 py-1 text-sm font-bold ${accentSoftClass[vendor.accent]}`}

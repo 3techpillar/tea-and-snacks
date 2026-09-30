@@ -1,11 +1,13 @@
 import { apiClient } from "../api-client";
-import type { DemoOrder } from "@tea-and-snacks/shared";
+import type { DemoOrder, DeliveryAddress } from "@tea-and-snacks/shared";
 
 export const ordersApi = {
   place: (data: {
     customerName: string;
     customerPhone: string;
-    items: { productId: string; qty: number }[];
+    paymentMethod: "online" | "offline";
+    deliveryAddress: DeliveryAddress;
+    items: { productId: string; variantId?: string; qty: number }[];
   }) => apiClient.post<DemoOrder>("/api/orders", data),
 
   list: () => apiClient.get<DemoOrder[]>("/api/orders"),

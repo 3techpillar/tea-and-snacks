@@ -59,7 +59,12 @@ export const MESSAGES = {
   PAYMENT_NOT_CONFIRMED: "Confirm payment before marking the order Delivered.",
   FAILED_TO_SEND_EMAIL: "Failed to send email.",
   TOKEN_AND_DEVICE_ID_REQUIRED: "Token and deviceId are required.",
-  INTERNAL_SERVER_ERROR: "Internal server error."
+  INTERNAL_SERVER_ERROR: "Internal server error.",
+  INVALID_BUILDING: "Please select a valid building.",
+  MISSING_DELIVERY_ADDRESS: "Delivery address is required.",
+  MISSING_FLOOR: "Please provide a floor number.",
+  MISSING_OFFICE_NUMBER: "Please provide an office number.",
+  MISSING_RECIPIENT_PHONE: "Recipient phone number is required."
 };
 
 export const DYNAMIC_MESSAGES = {

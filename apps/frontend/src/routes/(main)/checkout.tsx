@@ -1,11 +1,15 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/lib/cart";
 import { ordersApi } from "@/lib/api/orders";
 import { useCatalog } from "@/lib/catalog-client";
 import { useAuth } from "@/lib/auth-client";
-import { UpiQr } from "@/components/UpiQr";
+import { BUILDINGS } from "@tea-and-snacks/shared";
+import type { BuildingId } from "@tea-and-snacks/shared";
+import { DeliveryAddressForm } from "@/components/checkout/DeliveryAddressForm";
+import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
+import { OrderSummary } from "@/components/checkout/OrderSummary";
 
 export const Route = createFileRoute("/(main)/checkout")({
   head: () => ({
@@ -30,17 +34,34 @@ function CheckoutPage() {
   const { vendorById } = useCatalog();
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Delivery address state
+  const [building, setBuilding] = useState<BuildingId>(BUILDINGS[0].id);
+  const [floor, setFloor] = useState("");
+  const [officeNumber, setOfficeNumber] = useState("");
+  const [recipientName, setRecipientName] = useState("");
   const [phone, setPhone] = useState("");
+
   const [paymentMethod, setPaymentMethod] = useState<"online" | "offline">("online");
   const [error, setError] = useState("");
 
+  // Prefill address and user details from profile
+  useEffect(() => {
+    if (user) {
+      setRecipientName((prev) => prev || user.name);
+      setPhone((prev) => prev || user.phone || "");
+      
+      if (user.defaultAddress) {
+        setBuilding((prev) => (prev === BUILDINGS[0].id ? user.defaultAddress!.building as BuildingId : prev));
+        setFloor((prev) => prev || user.defaultAddress!.floor);
+        setOfficeNumber((prev) => prev || user.defaultAddress!.officeNumber);
+      }
+    }
+  }, [user]);
+
   const placeOrder = useMutation({
-    mutationFn: (input: {
-      customerName: string;
-      customerPhone: string;
-      paymentMethod: "online" | "offline";
-      items: { productId: string; variantId?: string; qty: number }[];
-    }) => ordersApi.place(input),
+    mutationFn: (input: Parameters<typeof ordersApi.place>[0]) =>
+      ordersApi.place(input),
     onSuccess: (order) => {
       clear();
       navigate({ to: "/orders/$orderId", params: { orderId: order.id } });
@@ -112,14 +133,29 @@ function CheckoutPage() {
     e.preventDefault();
     setError("");
     if (!user) return;
+    if (!floor.trim()) {
+      setError("Please enter a floor number.");
+      return;
+    }
+    if (!officeNumber.trim()) {
+      setError("Please enter an office number.");
+      return;
+    }
     if (phone.trim().length < 8) {
       setError("Please enter a valid phone number.");
       return;
     }
     placeOrder.mutate({
-      customerName: user.name,
+      customerName: recipientName.trim() || user.name,
       customerPhone: phone.trim(),
       paymentMethod,
+      deliveryAddress: {
+        building,
+        floor: floor.trim(),
+        officeNumber: officeNumber.trim(),
+        recipientName: recipientName.trim() || user.name,
+        recipientPhone: phone.trim(),
+      },
       items: detailed.map(({ product, variant, qty }) => ({
         productId: product.id,
         variantId: variant?.id,
@@ -134,61 +170,25 @@ function CheckoutPage() {
 
       <div className="mt-6 grid gap-6 md:grid-cols-[1.2fr_1fr]">
         <form onSubmit={submit} className="surface-card space-y-4 p-5">
-          <div>
-            <p className="text-sm font-semibold">Ordering as</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {user?.name} · {user?.email}
-            </p>
-          </div>
-          <div>
-            <label htmlFor="phone" className="text-sm font-semibold">
-              Phone
-            </label>
-            <input
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="98765 43210"
-              className="mt-1 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+          <DeliveryAddressForm
+            building={building}
+            setBuilding={setBuilding}
+            floor={floor}
+            setFloor={setFloor}
+            officeNumber={officeNumber}
+            setOfficeNumber={setOfficeNumber}
+            recipientName={recipientName}
+            setRecipientName={setRecipientName}
+            phone={phone}
+            setPhone={setPhone}
+          />
 
-          <div>
-            <p className="text-sm font-semibold">Payment Method</p>
-            <div className="mt-2 flex gap-3">
-              <label className={`flex flex-1 cursor-pointer items-center justify-center rounded-xl border p-3 font-semibold transition-colors ${paymentMethod === "online" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-secondary"}`}>
-                <input type="radio" name="paymentMethod" className="hidden" checked={paymentMethod === "online"} onChange={() => setPaymentMethod("online")} />
-                Pay Online (UPI)
-              </label>
-              <label className={`flex flex-1 cursor-pointer items-center justify-center rounded-xl border p-3 font-semibold transition-colors ${paymentMethod === "offline" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-secondary"}`}>
-                <input type="radio" name="paymentMethod" className="hidden" checked={paymentMethod === "offline"} onChange={() => setPaymentMethod("offline")} />
-                Pay at Stall (Offline)
-              </label>
-            </div>
-          </div>
-
-          {paymentMethod === "online" && (
-            <>
-              <div className="rounded-2xl bg-sky-soft p-4 text-sky-ink">
-                <p className="font-semibold">Scan &amp; pay ₹{total} by UPI</p>
-                <p className="mt-1 text-sm opacity-85">
-                  Scan each stall's QR with any UPI app, then upload the payment
-                  screenshot on the next screen.
-                </p>
-              </div>
-
-              <div className="grid gap-3">
-                {vendorTotals.map(({ vendor, amount }) => (
-                  <UpiQr
-                    key={vendor.id}
-                    vendor={vendor}
-                    amount={amount}
-                    note={`Easy Food · ${vendor.name}`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+          <PaymentMethodSelector
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            total={total}
+            vendorTotals={vendorTotals}
+          />
 
           {error && (
             <p className="text-sm font-medium text-destructive">{error}</p>
@@ -205,23 +205,7 @@ function CheckoutPage() {
           </button>
         </form>
 
-        <aside className="surface-card h-fit p-5">
-          <h2 className="text-lg font-semibold">Order summary</h2>
-          <div className="mt-3 space-y-2 text-sm">
-            {detailed.map(({ product, qty }) => (
-              <div key={product.id} className="flex justify-between">
-                <span className="text-muted-foreground">
-                  {qty} × {product.emoji} {product.name}
-                </span>
-                <span className="font-semibold">₹{product.price * qty}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex justify-between border-t border-border pt-3 font-bold">
-            <span>Total</span>
-            <span>₹{total}</span>
-          </div>
-        </aside>
+        <OrderSummary detailed={detailed} total={total} />
       </div>
     </div>
   );

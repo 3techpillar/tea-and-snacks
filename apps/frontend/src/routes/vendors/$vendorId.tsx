@@ -5,6 +5,7 @@ import { useState } from "react";
 import { accentClass, accentSoftClass, vendorById } from "@/lib/data";
 import { catalogQueryOptions, useCatalog } from "@/lib/catalog-client";
 import { vendorImage } from "@/lib/images";
+import { BUILDINGS } from "@tea-and-snacks/shared";
 
 export const Route = createFileRoute("/vendors/$vendorId")({
   loader: async ({ params, context }) => {
@@ -63,7 +64,7 @@ function VendorMenu() {
 
   const share = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `${vendor.name} — ${vendor.specialty} at ${vendor.counter}. Order on Easy Food:`;
+    const text = `${vendor.name} — ${vendor.specialty} at Stall ${vendor.location?.stallNumber || "TBD"}. Order on Easy Food:`;
     try {
       if (navigator.share) {
         await navigator.share({ title: vendor.name, text, url });
@@ -132,8 +133,13 @@ function VendorMenu() {
             {vendor.emoji} {vendor.specialty}
           </p>
           <p className="mt-2 text-sm opacity-85">
-            {vendor.counter} · Open {vendor.hours}
+            Open {vendor.hours}
           </p>
+          {vendor.location && (
+            <p className="mt-2 text-sm font-medium opacity-85">
+              📍 {vendor.location.building ? (BUILDINGS.find((b) => b.id === vendor.location!.building)?.name ?? vendor.location.building) + ' · ' : ''}Floor {vendor.location.floor} · Stall {vendor.location.stallNumber}
+            </p>
+          )}
         </div>
         <div className="surface-card p-4">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">

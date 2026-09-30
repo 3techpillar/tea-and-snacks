@@ -102,7 +102,7 @@ export const AdminController = {
     try {
       const {
         id, name, cuisine, emoji, rating, eta, accent,
-        tagline, counter, hours, specialty, upiId, highlights,
+        tagline, location, hours, specialty, upiId, highlights,
         imageUrl, isAcceptingOrders, ownerEmail, ownerMobile
       } = req.body;
 
@@ -117,7 +117,7 @@ export const AdminController = {
       const vendor = await Vendor.create({
         _id: id,
         name, cuisine, emoji, rating: rating || 5.0, eta, accent,
-        tagline, counter, hours, specialty, upiId, highlights,
+        tagline, location, hours, specialty, upiId, highlights,
         imageUrl, isAcceptingOrders
       });
 

@@ -4,7 +4,8 @@ import { Product } from "../models/Product.model";
 import { nextOrderNumber } from "../models/Counter.model";
 import { emitOrderUpdated } from "../realtime/socket";
 import { toDemoOrder } from "../utils/orderMapper.util";
-import type { PublicUser, DemoOrder } from "@tea-and-snacks/shared";
+import type { PublicUser, DemoOrder, DeliveryAddress } from "@tea-and-snacks/shared";
+import { BUILDINGS } from "@tea-and-snacks/shared";
 import { sendToVendor, sendToAdmins, sendToUser } from "./notification.service";
 import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
 
@@ -14,6 +15,7 @@ export type PlaceOrderInput = {
   customerName: string;
   customerPhone: string;
   paymentMethod: "online" | "offline";
+  deliveryAddress: DeliveryAddress;
   items: { productId: string; variantId?: string; qty: number }[];
 };
 
@@ -70,6 +72,16 @@ export async function placeOrder(
 
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
 
+  // ── Validate delivery address ─────────────────────────────────────
+  const addr = data.deliveryAddress;
+  if (!addr) throw new Error(MESSAGES.MISSING_DELIVERY_ADDRESS);
+  if (!BUILDINGS.some((b) => b.id === addr.building)) {
+    throw new Error(MESSAGES.INVALID_BUILDING);
+  }
+  if (!addr.floor?.trim()) throw new Error(MESSAGES.MISSING_FLOOR);
+  if (!addr.officeNumber?.trim()) throw new Error(MESSAGES.MISSING_OFFICE_NUMBER);
+  if (!addr.recipientPhone?.trim()) throw new Error(MESSAGES.MISSING_RECIPIENT_PHONE);
+
   const orderNumber = await nextOrderNumber();
   const order = await Order.create({
     displayId: String(orderNumber),
@@ -78,6 +90,13 @@ export async function placeOrder(
     customerName: data.customerName,
     customerPhone: data.customerPhone,
     paymentMethod: data.paymentMethod,
+    deliveryAddress: {
+      building: addr.building,
+      floor: addr.floor.trim(),
+      officeNumber: addr.officeNumber.trim(),
+      recipientName: addr.recipientName?.trim() || data.customerName,
+      recipientPhone: addr.recipientPhone.trim(),
+    },
     items,
     total,
   });

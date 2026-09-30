@@ -69,9 +69,8 @@ function AdminVendorsDashboard() {
       ),
     },
     {
-      header: "Counter",
-      accessorKey: "counter",
-      className: "text-muted-foreground",
+      header: "Stall No.",
+      cell: (v) => <span className="text-muted-foreground">{v.location?.stallNumber || "—"}</span>,
     },
     {
       header: "Actions",

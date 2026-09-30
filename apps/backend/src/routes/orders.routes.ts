@@ -3,6 +3,7 @@ import { z } from "zod";
 import { validate } from "../middleware/validate.middleware";
 import { authMiddleware } from "../middleware/auth.middleware";
 import * as ordersController from "../controllers/orders.controller";
+import { BUILDINGS } from "@tea-and-snacks/shared";
 
 const router = Router();
 
@@ -12,9 +13,21 @@ router.use(authMiddleware);
 const placeOrderSchema = z.object({
   customerName: z.string().trim().min(2),
   customerPhone: z.string().trim().min(8),
+  paymentMethod: z.enum(["online", "offline"]),
+  deliveryAddress: z.object({
+    building: z.enum(BUILDINGS.map(b => b.id) as [string, ...string[]]),
+    floor: z.string().trim().min(1),
+    officeNumber: z.string().trim().min(1),
+    recipientName: z.string().trim().optional(),
+    recipientPhone: z.string().trim().min(8),
+  }),
   items: z
     .array(
-      z.object({ productId: z.string(), qty: z.number().int().min(1).max(50) }),
+      z.object({ 
+        productId: z.string(), 
+        variantId: z.string().optional(),
+        qty: z.number().int().min(1).max(50) 
+      }),
     )
     .min(1, "Your cart is empty."),
 });

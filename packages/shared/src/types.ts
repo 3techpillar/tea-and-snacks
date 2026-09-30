@@ -2,6 +2,29 @@
 
 export type AccentColor = "mango" | "chili" | "mint" | "berry" | "sky" | "grape";
 
+// ── Location types ────────────────────────────────────────────────
+
+export const BUILDINGS = [
+  { id: "gaur-city-center", name: "Gaur City Center" },
+  { id: "gaur-city-mall",   name: "Gaur City Mall" },
+] as const;
+
+export type BuildingId = typeof BUILDINGS[number]["id"];
+
+export type DeliveryAddress = {
+  building: BuildingId;
+  floor: string;
+  officeNumber: string;
+  recipientName: string;
+  recipientPhone: string;
+};
+
+export type VendorLocation = {
+  building?: BuildingId;
+  floor: string;
+  stallNumber: string;
+};
+
 export type ProductVariant = {
   id: string;
   name: string;
@@ -35,12 +58,12 @@ export type Vendor = {
   eta: string;
   accent: AccentColor;
   tagline: string;
-  counter: string;
   hours: string;
   specialty: string;
   upiId: string;
   highlights: string[];
   imageUrl?: string;
+  location?: VendorLocation;
   isActive?: boolean;
   isAcceptingOrders?: boolean;
 };
@@ -81,6 +104,11 @@ export type PublicUser = {
   role: UserRole;
   vendorId?: string;
   isActive: boolean;
+  defaultAddress?: {
+    building: string;
+    floor: string;
+    officeNumber: string;
+  };
 };
 
 export type AdminUserView = PublicUser & {
@@ -148,6 +176,7 @@ export type DemoOrder = {
   /** Shown to the customer when admin intervenes. */
   adminNote?: string;
   messages: OrderMessage[];
+  deliveryAddress?: DeliveryAddress;
   cancelledBy?: "customer" | "vendor" | "admin";
   cancellationReason?: string;
 };

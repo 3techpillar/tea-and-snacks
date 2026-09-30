@@ -1,5 +1,5 @@
 import type { OrderDoc } from "../models/Order.model";
-import type { DemoOrder } from "@tea-and-snacks/shared";
+import type { DemoOrder, BuildingId } from "@tea-and-snacks/shared";
 
 /**
  * Maps a Mongoose order document to the wire-format DemoOrder shape used by
@@ -42,5 +42,12 @@ export function toDemoOrder(o: OrderDoc): DemoOrder {
       text: m.text,
       timestamp: m.timestamp.toISOString(),
     })),
+    deliveryAddress: o.deliveryAddress ? {
+      building: o.deliveryAddress.building as BuildingId,
+      floor: o.deliveryAddress.floor,
+      officeNumber: o.deliveryAddress.officeNumber,
+      recipientName: o.deliveryAddress.recipientName,
+      recipientPhone: o.deliveryAddress.recipientPhone,
+    } : undefined,
   };
 }

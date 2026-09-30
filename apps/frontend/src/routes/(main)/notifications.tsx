@@ -141,9 +141,6 @@ function NotificationsPage() {
                   <Trash2 className="h-4 w-4" />
                 </button>
 
-                {!n.read && (
-                  <div className="absolute left-0 top-0 h-full w-1 bg-primary" />
-                )}
               </li>
             ))}
           </ul>
