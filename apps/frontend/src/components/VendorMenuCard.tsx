@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth-client";
 import type { Product } from "@tea-and-snacks/shared";
+import { discountedPrice } from "@tea-and-snacks/shared";
 import { productImage } from "@/lib/images";
 import {
   Dialog,
@@ -52,6 +53,11 @@ export function VendorMenuCard({ product }: { product: Product }) {
             height={512}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
+          {product.discountPercent ? (
+            <div className="absolute left-2 top-2 rounded-full bg-chili px-2 py-0.5 text-[10px] font-bold text-chili-foreground shadow-md animate-pulse">
+              {product.discountPercent}% OFF
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-1 flex-col p-2.5 sm:p-3">
@@ -68,9 +74,25 @@ export function VendorMenuCard({ product }: { product: Product }) {
             <h4 className="line-clamp-2 font-semibold text-sm leading-tight sm:text-[15px] sm:leading-snug">{product.name}</h4>
           </div>
           
-          <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-foreground">
-            {product.hasVariants ? "Starts at " : ""}₹{product.price}
-          </p>
+          <div className="mt-0.5 sm:mt-1 flex items-center gap-1.5 flex-wrap">
+            {product.discountPercent ? (
+              <>
+                <span className="text-xs sm:text-sm font-bold text-foreground">
+                  ₹{discountedPrice(product.price, product.discountPercent)}
+                </span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground line-through">
+                  ₹{product.price}
+                </span>
+                <span className="rounded-full bg-chili-soft px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-chili-ink">
+                  {product.discountPercent}% OFF
+                </span>
+              </>
+            ) : (
+              <span className="text-xs sm:text-sm font-bold text-foreground">
+                {product.hasVariants ? "Starts at " : ""}₹{product.price}
+              </span>
+            )}
+          </div>
 
           <div className="mt-1.5 sm:mt-2 flex flex-wrap gap-1 sm:gap-1.5">
             {product.tag && (

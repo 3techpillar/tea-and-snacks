@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil } from "lucide-react";
 import { vendorApi } from "@/lib/api/vendor";
 import { useCatalog } from "@/lib/catalog-client";
+import { DISCOUNT_STEPS, discountedPrice } from "@tea-and-snacks/shared";
 import type { Product } from "@tea-and-snacks/shared";
 import { InlinePrice } from "./MenuManagement/InlinePrice";
 
@@ -26,6 +27,12 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
   const priceMutation = useMutation({
     mutationFn: ({ productId, price }: { productId: string; price: number }) =>
       vendorApi.updateProduct(vendorId, productId, { price }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["catalog"] }),
+  });
+
+  const promoMutation = useMutation({
+    mutationFn: ({ productId, discountPercent }: { productId: string; discountPercent: number | null }) =>
+      vendorApi.updateProduct(vendorId, productId, { discountPercent }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["catalog"] }),
   });
 
@@ -130,6 +137,32 @@ export function MenuManagementTab({ vendorId }: { vendorId: string }) {
                       <option value="coming_soon">Coming Soon</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Promotion control */}
+                <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2">
+                  <span className="text-xs font-medium text-muted-foreground">🏷️ Promo:</span>
+                  <select
+                    value={p.discountPercent ?? 0}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      promoMutation.mutate({ productId, discountPercent: val === 0 ? null : val });
+                    }}
+                    disabled={promoMutation.isPending}
+                    className={`rounded-md border border-border px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary bg-card ${
+                      p.discountPercent ? "text-chili-ink" : "text-muted-foreground"
+                    }`}
+                  >
+                    <option value={0}>None</option>
+                    {DISCOUNT_STEPS.map((s) => (
+                      <option key={s} value={s}>{s}% off</option>
+                    ))}
+                  </select>
+                  {p.discountPercent ? (
+                    <span className="text-xs font-bold text-mint-ink">
+                      ₹{p.price} → ₹{discountedPrice(p.price, p.discountPercent)}
+                    </span>
+                  ) : null}
                 </div>
 
                 {/* Actions row */}

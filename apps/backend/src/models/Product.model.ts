@@ -29,6 +29,7 @@ const productSchema = new Schema(
         price: { type: Number, required: true, min: 0 },
       },
     ],
+    discountPercent: { type: Number, default: null, min: 0, max: 50 },
   },
   { timestamps: true, _id: false },
 );

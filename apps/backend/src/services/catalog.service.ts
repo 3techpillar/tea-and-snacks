@@ -50,6 +50,7 @@ export async function getCatalog(): Promise<Catalog> {
       hasVariants: p.hasVariants,
       variantLabel: p.variantLabel,
       variants: p.variants as ProductDTO["variants"],
+      discountPercent: p.discountPercent ?? null,
     })),
     offers: offerDocs.map((o) => ({
       id: o._id as unknown as string,

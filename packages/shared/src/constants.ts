@@ -42,3 +42,18 @@ export function vendorSlice(order: PublicOrder, vendorId: string) {
   const items = order.items.filter((i) => i.vendorId === vendorId);
   return { items, subtotal: items.reduce((s, i) => s + i.price * i.qty, 0) };
 }
+
+// ── Promotions ─────────────────────────────────────────────────────
+
+/** Allowed promotion discount steps (multiples of 5, up to 50%). */
+export const DISCOUNT_STEPS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] as const;
+export type DiscountStep = (typeof DISCOUNT_STEPS)[number];
+
+/** Compute the discounted price. Returns the original price if no discount. */
+export function discountedPrice(
+  originalPrice: number,
+  discountPercent: number | null | undefined,
+): number {
+  if (!discountPercent || discountPercent <= 0) return originalPrice;
+  return Math.round(originalPrice * (1 - discountPercent / 100));
+}

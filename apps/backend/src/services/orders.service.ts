@@ -5,7 +5,7 @@ import { nextOrderNumber } from "../models/Counter.model";
 import { emitOrderUpdated } from "../realtime/socket";
 import { toPublicOrder } from "../utils/orderMapper.util";
 import type { PublicUser, PublicOrder, DeliveryAddress } from "@tea-and-snacks/shared";
-import { BUILDINGS } from "@tea-and-snacks/shared";
+import { BUILDINGS, discountedPrice } from "@tea-and-snacks/shared";
 import { sendToVendor, sendToAdmins, sendToUser } from "./notification.service";
 import { MESSAGES, DYNAMIC_MESSAGES } from "../constants/messages";
 
@@ -61,7 +61,7 @@ export async function placeOrder(
       variantName,
       emoji: product.emoji,
       qty,
-      price,
+      price: discountedPrice(price, product.discountPercent),
     };
   });
 

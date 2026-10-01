@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { useCatalog } from "./catalog-client";
+import { discountedPrice } from "@tea-and-snacks/shared";
 import type { Product, ProductVariant } from "@tea-and-snacks/shared";
 
 export type CartLine = { productId: string; variantId?: string; qty: number };
@@ -114,7 +115,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       hydrated,
       detailed,
       count: lines.reduce((s, l) => s + l.qty, 0),
-      total: detailed.reduce((s, d) => s + (d.variant ? d.variant.price : d.product.price) * d.qty, 0),
+      total: detailed.reduce((s, d) => {
+        const basePrice = d.variant ? d.variant.price : d.product.price;
+        return s + discountedPrice(basePrice, d.product.discountPercent) * d.qty;
+      }, 0),
       add: (productId, variantId) => {
         const productToAdd = products.find((p) => p.id === productId);
         if (!productToAdd) return;

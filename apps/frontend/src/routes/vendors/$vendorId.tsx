@@ -5,7 +5,7 @@ import { useState } from "react";
 import { accentClass, accentSoftClass, vendorById } from "@/lib/data";
 import { catalogQueryOptions, useCatalog } from "@/lib/catalog-client";
 import { vendorImage } from "@/lib/images";
-import { BUILDINGS } from "@tea-and-snacks/shared";
+import { BUILDINGS, discountedPrice } from "@tea-and-snacks/shared";
 
 export const Route = createFileRoute("/vendors/$vendorId")({
   loader: async ({ params, context }) => {
@@ -170,6 +170,31 @@ function VendorMenu() {
           ))}
         </div>
       )}
+
+      {/* Deals at this stall */}
+      {(() => {
+        const deals = items.filter(
+          (i) => i.discountPercent && i.discountPercent > 0 && (i.status === "available" || (!i.status && i.isAvailable !== false))
+        );
+        if (deals.length === 0) return null;
+        return (
+          <div className="mt-4 rounded-2xl bg-chili-soft/50 p-3">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-chili-ink mb-2">
+              🔥 Deals at this stall
+            </p>
+            <div className="no-scrollbar flex gap-2 overflow-x-auto">
+              {deals.map((p) => (
+                <span
+                  key={p.id}
+                  className="shrink-0 rounded-full bg-chili-soft px-3 py-1.5 text-xs font-semibold text-chili-ink"
+                >
+                  {p.emoji} {p.name} · ₹{discountedPrice(p.price, p.discountPercent)} <span className="line-through opacity-60">₹{p.price}</span> · {p.discountPercent}% OFF
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => (

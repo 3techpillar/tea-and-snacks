@@ -47,6 +47,8 @@ export type Product = {
   hasVariants?: boolean;
   variants?: ProductVariant[];
   variantLabel?: string;
+  /** Promotion discount percentage (5, 10, 15, … 50). null = no promotion. */
+  discountPercent?: number | null;
 };
 
 export type Vendor = {

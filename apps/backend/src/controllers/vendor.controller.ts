@@ -101,7 +101,7 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
     const vendorId = req.params.vendorId as string;
     requireVendorAccess(req.user, vendorId);
     
-    const { id, name, price, emoji, veg, tag, imageUrl, isAvailable, status, prepTime, hasVariants, variantLabel, variants } = req.body;
+    const { id, name, price, emoji, veg, tag, imageUrl, isAvailable, status, prepTime, hasVariants, variantLabel, variants, discountPercent } = req.body;
     if (!id || !name || price === undefined) {
       throw new ValidationError(MESSAGES.MISSING_PRODUCT_DETAILS);
     }
@@ -119,7 +119,7 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
     const product = await Product.create({
       _id: productId,
       vendorId,
-      name, price, emoji: emoji || "🍲", veg: veg ?? true, tag, imageUrl, isAvailable, status, prepTime, isQuickDelivery, hasVariants, variantLabel, variants
+      name, price, emoji: emoji || "🍲", veg: veg ?? true, tag, imageUrl, isAvailable, status, prepTime, isQuickDelivery, hasVariants, variantLabel, variants, discountPercent: discountPercent ?? null
     });
 
     res.status(201).json(product);

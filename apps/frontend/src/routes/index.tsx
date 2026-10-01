@@ -3,7 +3,8 @@ import { SearchBar } from "@/components/SearchBar";
 import { OfferSlider } from "@/components/OfferSlider";
 import { VendorCard } from "@/components/VendorCard";
 import { useCatalog } from "@/lib/catalog-client";
-import { heroImages } from "@/lib/images";
+import { heroImages, productImage } from "@/lib/images";
+import { discountedPrice } from "@tea-and-snacks/shared";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { vendors } = useCatalog();
+  const { vendors, products } = useCatalog();
   const topVendors = vendors.slice(0, 4);
 
   const heroSlides = [
@@ -143,6 +144,63 @@ function Index() {
           <OfferSlider />
         </div>
       </section> */}
+
+      {/* 🔥 Today's Deals — promoted products across all vendors */}
+      {(() => {
+        const deals = products.filter(
+          (p) => p.discountPercent && p.discountPercent > 0 && (p.status === "available" || (!p.status && p.isAvailable !== false))
+        );
+        if (deals.length === 0) return null;
+        return (
+          <section className="mt-7 sm:mt-10">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-lg font-semibold sm:text-2xl">🔥 Today's Deals</h2>
+            </div>
+            <div className="no-scrollbar -mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
+              {deals.map((p) => {
+                const v = vendors.find((v) => v.id === p.vendorId);
+                if (!v) return null;
+                return (
+                  <Link
+                    key={p.id}
+                    to="/vendors/$vendorId"
+                    params={{ vendorId: p.vendorId }}
+                    className="group relative flex min-w-[200px] max-w-[220px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+                  >
+                    <div className="relative h-28 w-full overflow-hidden bg-muted">
+                      <img
+                        src={p.imageUrl || productImage(p.id)}
+                        alt={p.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute left-2 top-2 rounded-full bg-chili px-2 py-0.5 text-[10px] font-bold text-chili-foreground shadow-md">
+                        {p.discountPercent}% OFF
+                      </div>
+                    </div>
+                    <div className="flex flex-1 flex-col p-3">
+                      <h3 className="line-clamp-1 text-sm font-semibold">
+                        {p.emoji} {p.name}
+                      </h3>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {v.name}
+                      </p>
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-foreground">
+                          ₹{discountedPrice(p.price, p.discountPercent)}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground line-through">
+                          ₹{p.price}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
 
       <section className="mt-7 sm:mt-10">
         <div className="flex items-baseline justify-between gap-3">
