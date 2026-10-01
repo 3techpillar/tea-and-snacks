@@ -1,8 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/lib/api/admin";
-import { ChevronLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Store, CheckCircle2, XCircle } from "lucide-react";
-import type { AdminUserView } from "@tea-and-snacks/shared";
+import {
+  ChevronLeft,
+  User as UserIcon,
+  Mail,
+  Phone,
+  Calendar,
+  Shield,
+  Store,
+  CheckCircle2,
+  XCircle,
+  MapPin,
+  Building2,
+} from "lucide-react";
+import { BUILDINGS } from "@tea-and-snacks/shared";
+import { VendorMenuSection } from "@/components/admin/VendorMenuSection";
 
 export const Route = createFileRoute("/admin/users_/$userId")({
   head: () => ({ meta: [{ title: "User Profile — Admin" }] }),
@@ -49,8 +62,12 @@ function AdminUserProfilePage() {
 
   const RoleIcon = user.role === "admin" ? Shield : user.role === "vendor" ? Store : UserIcon;
 
+  const buildingName = user.defaultAddress?.building
+    ? BUILDINGS.find((b) => b.id === user.defaultAddress!.building)?.name ?? user.defaultAddress.building
+    : null;
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8">
       <Link 
         to="/admin/users" 
         className="inline-flex items-center text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors mb-6"
@@ -76,7 +93,7 @@ function AdminUserProfilePage() {
                   <Mail className="h-4 w-4" /> {user.email}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-bold capitalize">
                   <RoleIcon className="h-4 w-4" />
                   {user.role}
@@ -88,6 +105,15 @@ function AdminUserProfilePage() {
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-sm font-bold text-muted-foreground border border-border">
                     <XCircle className="h-4 w-4" /> Pending
+                  </span>
+                )}
+                {user.isActive ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-mint/10 px-3 py-1 text-sm font-bold text-mint-ink border border-mint/20">
+                    <CheckCircle2 className="h-4 w-4" /> Active
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-sm font-bold text-destructive border border-destructive/20">
+                    <XCircle className="h-4 w-4" /> Inactive
                   </span>
                 )}
               </div>
@@ -130,9 +156,50 @@ function AdminUserProfilePage() {
                 </div>
               )}
             </div>
+
+            {/* Default Address Section */}
+            {user.defaultAddress && (user.defaultAddress.building || user.defaultAddress.floor || user.defaultAddress.officeNumber) ? (
+              <div className="mt-8 rounded-2xl border border-border bg-muted/20 p-5">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-4">
+                  <MapPin className="h-4 w-4" /> Default Delivery Address
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                      <Building2 className="h-3.5 w-3.5" /> Building
+                    </p>
+                    <p className="font-medium text-sm bg-card p-2 rounded-lg border border-border">
+                      {buildingName || user.defaultAddress.building || "—"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground">Floor</p>
+                    <p className="font-medium text-sm bg-card p-2 rounded-lg border border-border">
+                      {user.defaultAddress.floor || "—"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground">Office Number</p>
+                    <p className="font-medium text-sm bg-card p-2 rounded-lg border border-border">
+                      {user.defaultAddress.officeNumber || "—"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-8 rounded-2xl border border-dashed border-border py-6 text-center">
+                <MapPin className="h-5 w-5 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">No default delivery address set</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Vendor Menu Section — only for vendor users */}
+      {user.vendorId && (
+        <VendorMenuSection vendorId={user.vendorId} />
+      )}
     </div>
   );
 }
